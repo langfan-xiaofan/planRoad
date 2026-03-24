@@ -1,1 +1,56 @@
 package config
+
+import (
+	"errors"
+
+	"github.com/spf13/viper"
+)
+
+var Conf = new(Config)
+
+type Config struct {
+	Jwt     `mapstructure:"jwt"`
+	Neo4j   `mapstructure:"neo4j"`
+	Redis   `mapstructure:"redis"`
+	MongoDb `mapstructure:"mongodb"`
+	Mysql   `mapstructure:"mysql"`
+}
+type Jwt struct {
+	Key  string `mapstructure:"key"`
+	Hour int    `mapstructure:"hour"`
+}
+
+type Neo4j struct {
+	Url      string `mapstructure:"url"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+}
+
+type Redis struct {
+	Url      string `mapstructure:"url"`
+	Password string `mapstructure:"password"`
+	Db       int    `mapstructure:"db"`
+}
+
+type MongoDb struct {
+	Url      string `mapstructure:"url"`
+	Database string `mapstructure:"database"`
+}
+
+type Mysql struct {
+	Dsn         string `mapstructure:"dsn"`
+	MaxOpenConn int    `mapstructure:"MaxOpenConn"`
+	MaxIdleConn int    `mapstructure:"MaxIdleConn"`
+}
+
+func Init() error {
+	viper.SetConfigFile("configs/config.yaml")
+	err := viper.ReadInConfig()
+	if err != nil {
+		return errors.New("读取配置失败")
+	}
+	if err := viper.Unmarshal(Conf); err != nil {
+		return errors.New("映射配置失败")
+	}
+	return nil
+}

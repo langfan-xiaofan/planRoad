@@ -1,2 +1,18 @@
 jwt:
-  key:
+  key: "UX0fF8VKu3gjNXOIejQyB9c47lzTJ+CDAcEJt/8jnfo="
+  hour: 24
+neo4j:
+  url: "neo4j://localhost:7687"
+  user: "neo4j"
+  password: "2127743263yn"
+redis:
+  url: "localhost:6379"
+  password: ""
+  db: 0
+mongodb:
+  url: "mongodb://localhost:27017"
+  database: "planroad"
+mysql:
+  dsn: "root:2127743263@tcp(127.0.0.1:3306)/planroad?charset=utf8mb4&parseTime=True&loc=Local"
+  MaxOpenConn: 100
+  MaxIdleConn: 10

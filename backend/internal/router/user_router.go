@@ -1,11 +1,17 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"backend/internal/handler"
+
+	"github.com/gin-gonic/gin"
+)
 
 func initUserRouter(g *gin.Engine) {
-	g.GET("/user", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "user router",
-		})
-	})
+	userGroup := g.Group("/user")
+	{
+		userGroup.POST("/register", handler.RegisterHandler)
+		userGroup.POST("/login", handler.LoginHandler)
+	}
+	//userGroup.Use(middleware.JwtMiddleware())
+
 }
