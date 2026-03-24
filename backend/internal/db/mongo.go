@@ -1,0 +1,30 @@
+package db
+
+import (
+	"backend/internal/config"
+	"context"
+	"time"
+
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+)
+
+var MongoDatabase *mongo.Database
+var MongoConfig = config.Conf.MongoDb
+
+func MongoDbInit() error {
+	clientOptions := options.Client().ApplyURI(MongoConfig.Url)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(clientOptions)
+	if err != nil {
+		return err
+	}
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		return err
+	}
+	MongoDatabase = client.Database(MongoConfig.Database)
+	return nil
+}
