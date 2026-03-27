@@ -44,6 +44,10 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
+<<<<<<< HEAD
+=======
+	router.InitRouter(r, agent)
+>>>>>>> 817bb7a2540f5637395e2a2e1b06aeef325acf68
 	err = cloudflare.CloudFlareInit()
 	if err != nil {
 		panic(err)
