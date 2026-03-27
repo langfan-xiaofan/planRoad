@@ -18,10 +18,9 @@ func MysqlInit() error {
 	}
 	err = MysqlDatabase.AutoMigrate(
 		&model.User{},
-		// &model.Article{}, // 如果以后有其他表，继续往后加
 	)
 	if err != nil {
-		return err // 迁移失败通常是因为权限不足或数据库连接中断
+		return err
 	}
 	return nil
 }

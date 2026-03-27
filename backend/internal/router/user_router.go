@@ -2,6 +2,7 @@ package router
 
 import (
 	"backend/internal/handler"
+	"backend/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +13,10 @@ func initUserRouter(g *gin.Engine) {
 		userGroup.POST("/register", handler.RegisterHandler)
 		userGroup.POST("/login", handler.LoginHandler)
 	}
-	//userGroup.Use(middleware.JwtMiddleware())
+	authGroup := userGroup.Group("/")
+	authGroup.Use(middleware.JwtMiddleware())
+	{
+		authGroup.POST("/avatar", handler.UploadAvatarHandler)
 
+	}
 }
