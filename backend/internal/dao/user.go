@@ -3,6 +3,7 @@ package dao
 import (
 	"backend/internal/model"
 
+	"github.com/cockroachdb/errors"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"gorm.io/gorm"
 )
@@ -38,4 +39,11 @@ func (u *UserDao) FindUserByEmail(email string) (*model.User, error) {
 	var user model.User
 	err := u.mysqldb.Where("email = ?", email).First(&user).Error
 	return &user, err
+}
+func (u *UserDao) UpdateAvatarUrl(id uint, avatar string) error {
+	err := u.mysqldb.Table("users").Where("id = ?", id).Update("avatar", avatar).Error
+	if err != nil {
+		return errors.New("更新头像url失败")
+	}
+	return nil
 }

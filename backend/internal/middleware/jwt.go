@@ -11,31 +11,21 @@ import (
 
 func JwtMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.Request.Header.Get("Authorization")
+		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			res.Fail(c, 401, nil, "未携带token")
 			c.Abort()
 			return
 		}
+		authHeader = strings.TrimPrefix(authHeader, "Bearer ")
 
-		// parts := strings.SplitN(authHeader, " ", 2)
-		// if !(len(parts) == 2 && parts[0] == "Bearer") {
-		// 	res.Fail(c, 401, nil, "token错误")
-		// 	c.Abort()
-		// 	return
-		// }
-		if strings.HasPrefix(authHeader, "Bearer") {
-			authHeader = strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
-		}
-		fmt.Println(authHeader)
 		claims, err := utils.ParseToken(authHeader)
 		if err != nil {
-			res.Fail(c, 401, nil, "token无效")
+			res.Fail(c, 401, nil, "Token无效或已过期")
 			c.Abort()
 			return
 		}
 		c.Set("userid", claims.Id)
-		c.Set("resumeid", claims.RemuseId)
 		c.Next()
 	}
 }

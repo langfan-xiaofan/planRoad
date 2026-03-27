@@ -9,11 +9,12 @@ import (
 var Conf = new(Config)
 
 type Config struct {
-	Jwt     `mapstructure:"jwt"`
-	Neo4j   `mapstructure:"neo4j"`
-	Redis   `mapstructure:"redis"`
-	MongoDb `mapstructure:"mongodb"`
-	Mysql   `mapstructure:"mysql"`
+	Jwt        `mapstructure:"jwt"`
+	Neo4j      `mapstructure:"neo4j"`
+	Redis      `mapstructure:"redis"`
+	MongoDb    `mapstructure:"mongodb"`
+	Mysql      `mapstructure:"mysql"`
+	Cloudflare `mapstructure:"Cloudflare"`
 }
 type Jwt struct {
 	Key  string `mapstructure:"key"`
@@ -41,6 +42,14 @@ type Mysql struct {
 	Dsn         string `mapstructure:"dsn"`
 	MaxOpenConn int    `mapstructure:"MaxOpenConn"`
 	MaxIdleConn int    `mapstructure:"MaxIdleConn"`
+}
+
+type Cloudflare struct {
+	AccountId  string `mapstructure:"AccountId"`
+	ApiKey     string `mapstructure:"ApiKey"`
+	ApiSecret  string `mapstructure:"ApiSecret"`
+	BucketName string `mapstructure:"BucketName"`
+	PublicKey  string `mapstructure:"PublicKey"`
 }
 
 func Init() error {
