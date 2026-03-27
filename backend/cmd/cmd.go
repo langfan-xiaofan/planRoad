@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"backend/internal/cloudflare"
 	"backend/internal/config"
 	"backend/internal/db"
 	"backend/internal/router"
@@ -39,6 +40,14 @@ func Run() {
 	}
 	r := gin.Default()
 	router.InitRouter(r, agent, fileParser, db.MysqlDatabase, db.RedisDatabase)
+	err = cloudflare.CloudFlareInit()
+	if err != nil {
+		panic(err)
+	}
+	err = cloudflare.CloudFlareInit()
+	if err != nil {
+		panic(err)
+	}
 	err = r.Run(":8080")
 	if err != nil {
 		return
