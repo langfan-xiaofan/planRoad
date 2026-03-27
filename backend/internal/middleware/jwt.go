@@ -3,6 +3,7 @@ package middleware
 import (
 	"backend/pkg/res"
 	"backend/pkg/utils"
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,14 +18,17 @@ func JwtMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			res.Fail(c, 401, nil, "token错误")
-			c.Abort()
-			return
+		// parts := strings.SplitN(authHeader, " ", 2)
+		// if !(len(parts) == 2 && parts[0] == "Bearer") {
+		// 	res.Fail(c, 401, nil, "token错误")
+		// 	c.Abort()
+		// 	return
+		// }
+		if strings.HasPrefix(authHeader, "Bearer") {
+			authHeader = strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
 		}
-
-		claims, err := utils.ParseToken(parts[1])
+		fmt.Println(authHeader)
+		claims, err := utils.ParseToken(authHeader)
 		if err != nil {
 			res.Fail(c, 401, nil, "token无效")
 			c.Abort()
