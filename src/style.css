@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局重置与字体 */
+body {
+  /* 换成了极淡的奶黄底色和深灰绿色正文 */
+  @apply bg-brand-cream/30 text-brand-text font-sans antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* 自定义滚动条，适配新配色（变得更细长柔和） */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(194, 214, 143, 0.4); /* 抹茶绿透明 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(194, 214, 143, 0.8); /* 抹茶绿加深 */
+}
+
+/* 卡片通用样式 (兼容你旧页面还没重构完的卡片) */
+.card-panel {
+  /* 换成了大圆角、奶黄边框和柔和阴影 */
+  @apply bg-white rounded-3xl shadow-sm border border-brand-cream/50 p-6 transition-all duration-300 hover:shadow-md hover:border-brand-green/30;
+}
+
+/* 页面切换动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
