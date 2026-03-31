@@ -26,8 +26,10 @@
 
       <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col relative h-full">
         <div class="shrink-0 mb-2">
-          <h3 class="font-extrabold text-brand-dark text-base">技能补齐 ROI 四象限图</h3>
-          <p class="text-xs text-gray-400">右上象限为高收益、低难度技能，建议优先学习。气泡大小=市场需求</p>
+          <h3 class="font-extrabold text-brand-dark text-base flex items-center gap-1">
+            核心技能缺口瀑布图 <el-icon class="text-brand-green"><Aim /></el-icon>
+          </h3>
+          <p class="text-xs text-gray-400">对比目标岗位，找出当前亟待补齐的最大能力缺口（点击绿色区域生成路径）</p>
         </div>
         <div ref="scatterRoiRef" class="flex-1 w-full min-h-0"></div>
       </div>
@@ -54,10 +56,11 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { Position, Right } from '@element-plus/icons-vue'
+import { Position, Right,Aim } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useUserStore } from '@/stores/user'
 import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
@@ -128,68 +131,109 @@ const initCharts = () => {
     charts.push(radarChart)
   }
 
-  // ==================== 2. 技能补齐 ROI 散点图 ====================
-  if (scatterRoiRef.value) {
-    const scatterChart = echarts.init(scatterRoiRef.value)
-    
-    const data = [
-      // [学习难度(X), 提分贡献(Y), 市场需求量(Size), 技能名称]
-      [30, 85, 40, 'Pinia 状态管理'], // 右上：易学且高收益
-      [45, 90, 60, 'Vite 构建优化'],  // 右上
-      [80, 95, 80, '微前端 (Qiankun)'], // 左上：难学但高收益
-      [75, 60, 50, 'Node.js 性能监控'], // 左下：难学且收益一般
-      [20, 40, 30, 'TailwindCSS 进阶']  // 右下：易学但收益一般
+  // ==================== 2. 核心技能缺口图  ====================
+  if (scatterRoiRef.value) { 
+    const gapChart = echarts.init(scatterRoiRef.value)
+    const rawData = [
+      { name: '微前端 (Qiankun)', current: 30, target: 80 },
+      { name: 'Vite 构建优化', current: 45, target: 85 },
+      { name: 'Node.js 性能监控', current: 50, target: 80 },
+      { name: 'Pinia 状态管理', current: 70, target: 90 }
     ]
+    // 提取 X、Y 轴数据，按缺口大小降序排列，缺口最大的在最上面
+    const sortedData = rawData.map(item => ({
+      ...item,
+      gap: item.target - item.current
+    })).sort((a, b) => a.gap - b.gap) // ECharts 横向柱图默认是从下往上画的
 
-    scatterChart.setOption({
-      grid: { top: '15%', bottom: '15%', left: '10%', right: '10%' },
+    gapChart.setOption({
+      grid: { top: '15%', bottom: '15%', left: '5%', right: '8%', containLabel: true },
       tooltip: {
-        formatter: (p) => `${p.data[3]}<br/>难度: ${p.data[0]} | 贡献: ${p.data[1]}`
-      },
-      xAxis: { name: '学习难度 (越小越容易) →', nameLocation: 'center', nameGap: 25, splitLine: { show: false }, min: 0, max: 100, inverse: true },
-      yAxis: { name: '匹配度提升贡献 →', nameLocation: 'center', nameGap: 25, splitLine: { lineStyle: { type: 'dashed' } }, min: 0, max: 100 },
-      series: [{
-        type: 'scatter',
-        symbolSize: (data) => data[2] * 0.8,
-        itemStyle: {
-          color: (params) => {
-            // 右上象限（难度<50且贡献>50）标绿，其他标灰黄
-            return (params.data[0] < 50 && params.data[1] > 50) ? '#8A9E58' : '#F7EECD'
-          },
-          shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.1)'
-        },
-        label: { show: true, formatter: (p) => p.data[3], position: 'top', fontSize: 10 },
-        data: data,
-        markLine: {
-          silent: true,
-          lineStyle: { color: '#e5e7eb', type: 'solid' },
-          data: [{ xAxis: 50 }, { yAxis: 50 }]
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: (params) => {
+          const current = params[0].value
+          const gap = params[1].value
+          return `
+            <div style="font-weight:bold;margin-bottom:4px;">${params[0].name}</div>
+            <div style="color:#9ca3af;font-size:12px;">当前掌握: ${current}%</div>
+            <div style="color:#8A9E58;font-size:12px;font-weight:bold;">亟待补齐: ${gap}% (点击生成路径)</div>
+          `
         }
-      }]
+      },
+      legend: { bottom: 0, icon: 'circle', textStyle: { fontSize: 11 } },
+      xAxis: { type: 'value', max: 100, splitLine: { lineStyle: { type: 'dashed' } } },
+      yAxis: { 
+        type: 'category', 
+        data: sortedData.map(d => d.name),
+        axisLabel: { fontWeight: 'bold', color: '#4b5563' },
+        axisLine: { show: false },
+        axisTick: { show: false }
+      },
+      series: [
+        {
+          name: '当前掌握',
+          type: 'bar',
+          stack: '总量',
+          barWidth: '45%',
+          itemStyle: { color: '#f3f4f6', borderRadius: [0, 0, 0, 0] },
+          data: sortedData.map(d => d.current)
+        },
+        {
+          name: '核心缺口 (点击生成路径)',
+          type: 'bar',
+          stack: '总量',
+          itemStyle: { 
+            color: '#8A9E58', 
+            borderRadius: [0, 4, 4, 0],
+            shadowBlur: 5,
+            shadowColor: 'rgba(138, 158, 88, 0.3)'
+          },
+          // 悬停高亮特效，强调可点击
+          emphasis: {
+            itemStyle: {
+              color: '#EFDCE2', 
+              borderColor: '#C2D68F',
+              borderWidth: 2,
+              shadowBlur: 10
+            }
+          },
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '+{c}%',
+            color: '#fff',
+            fontSize: 10
+          },
+          data: sortedData.map(d => d.gap)
+        }
+      ]
     })
-    charts.push(scatterChart)
-    // 绑定点击事件 (核心穿透逻辑)
-    scatterChart.on('click', (params) => {
-      // ECharts 中图表元素的类型叫 'series'
-      if (params.componentType === 'series') {
-        // 从数组结构 [x, y, size, name] 中精准提取第 4 个元素
-        const clickedSkill = params.data[3] || params.name
+    charts.push(gapChart)
 
-        if (clickedSkill) {
-          // 触发路由跳转
+    // 绑定点击事件 (穿透逻辑无缝迁移)
+    gapChart.on('click', (params) => {
+      // 限制只有点击缺口柱子时才跳转 点击灰色“当前掌握”柱子不跳转
+      if (params.seriesIndex === 1) {
+        const clickedSkill = params.name
+        
+        // 添加一点加载延迟动画让跳转更自然
+        ElMessage({
+          message: `正在为您生成【${clickedSkill}】的专属学习路径，请稍候...`,
+          type: 'success',
+          duration: 1000,
+          customClass: '!bg-[#F7EECD] !text-[#8A9E58] !border-[#C2D68F]'
+        })
+        // 延迟 600 毫秒后跳转，避免画面闪烁过快
+        setTimeout(() => {
           router.push({ 
             path: '/path', 
-            query: { 
-              focusSkill: clickedSkill,
-              from: 'match'
-            } 
+            query: { focusSkill: clickedSkill, from: 'match' } 
           })
-        }
+        }, 600)
       }
     })
   }
-
   // ==================== 3. 竞争力分布箱线图 ====================
   if (boxplotRef.value) {
     const boxChart = echarts.init(boxplotRef.value)

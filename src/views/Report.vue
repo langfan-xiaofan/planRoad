@@ -83,7 +83,7 @@ import { Trophy, Warning, InfoFilled } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 // 引入通知组件
 import { ElNotification } from 'element-plus'
-import { useExportPdfStore } from '@/stores/exportPdf'
+import { useExportPdfStore } from '@/utils/exportPdf'
 
 const pdfStore = useExportPdfStore()
 

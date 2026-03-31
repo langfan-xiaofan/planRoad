@@ -72,7 +72,7 @@ let charts = []
 let sankeyChart = null
 let ganttChart = null
 
-// 映射字典
+// 映射字典 
 const skillMap = {
   '微前端 (Qiankun)': { sankey: '微前端Qiankun项目', ganttIndex: 1 },
   'Pinia 状态管理': { sankey: 'Vue3工程化实战', ganttIndex: 3 },
@@ -82,7 +82,7 @@ const skillMap = {
 
 // ==================== 1. 初始化所有图表 ====================
 const initCharts = () => {
-  // Sankey 图表
+  // --- Sankey 图表 ---
   if (sankeyRef.value) {
     sankeyChart = echarts.init(sankeyRef.value)
     sankeyChart.setOption({
@@ -120,7 +120,8 @@ const initCharts = () => {
     })
     charts.push(sankeyChart)
   }
-  // Gantt 图表
+
+  // --- Gantt 图表 ---
   if (ganttRef.value) {
     ganttChart = echarts.init(ganttRef.value)
     ganttChart.setOption({
@@ -139,10 +140,28 @@ const initCharts = () => {
       ]
     })
     charts.push(ganttChart)
-    // 甘特图点击模拟推迟交互
+    // 点击甘特图柱子，推迟任务节点 2 周
+    ganttChart.on('click', (params) => {
+      if (params.seriesIndex === 1) { 
+        const currentOption = ganttChart.getOption()
+        const startTimes = currentOption.series[0].data
 
+        startTimes[params.dataIndex] += 2 
+        ganttChart.setOption({ series: [{ data: startTimes }, {}] })
+
+        sessionStorage.setItem('plan_delayed', 'true')
+
+        ElMessage({
+          message: '⚠️ 任务节点已推迟！系统已将延迟效应同步至【发展报告】的薪资预测模型中。',
+          type: 'warning',
+          duration: 3000,
+          customClass: '!bg-[#EFDCE2]/90 !text-[#F87171] !border-[#EFDCE2] font-bold shadow-lg'
+        })
+      }
+    })
   }
-  // Graph 图表
+
+  // --- Graph 图表 ---
   if (graphRef.value) {
     const graphChart = echarts.init(graphRef.value)
     graphChart.setOption({
@@ -167,36 +186,9 @@ const initCharts = () => {
       }]
     })
     charts.push(graphChart)
-    // ==================== 甘特图点击模拟推迟交互 ====================
-    ganttChart.on('click', (params) => {
-      if (params.seriesIndex === 1) { // 确保点击的是实际任务条，而不是透明占位条
-        // 1. 获取当前所有任务的起始时间
-        const currentOption = ganttChart.getOption()
-        const startTimes = currentOption.series[0].data
-
-        // 2. 将被点击的任务向后推迟 2 周
-        startTimes[params.dataIndex] += 2 
-
-        // 3. 动态更新图表视觉（进度条向右滑动）
-        ganttChart.setOption({
-          series: [{ data: startTimes }, {}]// 更新第一个 series (占位条) 的数据
-        })
-
-        // 4. 将“拖延状态”存入全局 sessionStorage 供报告页读取
-        sessionStorage.setItem('plan_delayed', 'true')
-
-        // 5. 给出提示（粉色警告样式）
-        ElMessage({
-          message: '⚠️ 任务节点已推迟！系统已将延迟效应同步至【发展报告】的薪资预测模型中。',
-          type: 'warning',
-          duration: 3000,
-          customClass: '!bg-[#EFDCE2]/90 !text-[#F87171] !border-[#EFDCE2] font-bold shadow-lg'
-        })
-      }
-    })
   }
   
-  // Stacked Bar 图表
+  // --- Stacked Bar 图表 ---
   if (stackedBarRef.value) {
     const stackedBarChart = echarts.init(stackedBarRef.value)
     stackedBarChart.setOption({
@@ -215,8 +207,7 @@ const initCharts = () => {
   }
 }
 
-// ==================== 2. 处理跨页面穿透联动逻辑 ====================
-// 将 await 彻底包裹在正常的 async 函数内部，防止报错
+// ==================== 2. 处理跨页面穿透联动逻辑 (心跳呼吸版) ====================
 const handleLinkage = async () => {
   await nextTick() 
   const targetSkill = route.query.focusSkill
@@ -224,37 +215,50 @@ const handleLinkage = async () => {
   if (targetSkill && skillMap[targetSkill]) {
     const mapped = skillMap[targetSkill]
 
-    // 弹出话术提示
+    // 1. 弹出话术提示 (层级调高防止被覆盖)
     setTimeout(() => {
       ElMessage({
         message: '我们的系统不仅能发现差距，还能直接生成填补差距的具体路径 ✨',
         type: 'success',
         icon: MagicStick,
         duration: 4000,
-        customClass: '!bg-[#F7EECD] !text-[#8A9E58] !border-[#C2D68F] shadow-lg font-bold' 
+        customClass: '!bg-[#F7EECD] !text-[#8A9E58] !border-[#C2D68F] shadow-lg font-bold z-[9999]' 
       })
     }, 300)
 
-    // 强制高亮桑基图
-    if (sankeyChart) {
-      sankeyChart.dispatchAction({ type: 'highlight', name: mapped.sankey })
-      sankeyChart.dispatchAction({ type: 'showTip', name: mapped.sankey })
-    }
-
-    // 强制高亮甘特图
-    if (ganttChart) {
-      ganttChart.dispatchAction({ type: 'highlight', seriesIndex: 1, dataIndex: mapped.ganttIndex })
-      ganttChart.dispatchAction({ type: 'showTip', seriesIndex: 1, dataIndex: mapped.ganttIndex })
-    }
+    // 2. 视觉锚点闭环 - 心跳呼吸闪烁特效
+    let blinkCount = 0
+    // 使用 setInterval 让高亮状态每隔 400ms 切换一次 (一明一暗)
+    const blinkTimer = setInterval(() => {
+      const actionType = blinkCount % 2 === 0 ? 'highlight' : 'downplay'
+      
+      // 桑基图与甘特图同步闪烁
+      if (sankeyChart) sankeyChart.dispatchAction({ type: actionType, name: mapped.sankey })
+      if (ganttChart) ganttChart.dispatchAction({ type: actionType, seriesIndex: 1, dataIndex: mapped.ganttIndex })
+      
+      blinkCount++
+      
+      // 闪烁 3 次（即执行 6 轮切换）后停止，并最终保持在常亮高亮状态
+      if (blinkCount > 5) {
+        clearInterval(blinkTimer)
+        if (sankeyChart) {
+          sankeyChart.dispatchAction({ type: 'highlight', name: mapped.sankey })
+          sankeyChart.dispatchAction({ type: 'showTip', name: mapped.sankey })
+        }
+        if (ganttChart) {
+          ganttChart.dispatchAction({ type: 'highlight', seriesIndex: 1, dataIndex: mapped.ganttIndex })
+          ganttChart.dispatchAction({ type: 'showTip', seriesIndex: 1, dataIndex: mapped.ganttIndex })
+        }
+      }
+    }, 400) // 呼吸频率：400毫秒
   }
 }
 
 // ==================== 3. 生命周期挂载 ====================
 onMounted(() => {
-  // 保证 DOM 挂载完毕后执行
   nextTick(() => {
-    initCharts() // 先渲染图表
-    handleLinkage() // 再处理穿透高亮逻辑
+    initCharts() 
+    handleLinkage() 
     window.addEventListener('resize', () => charts.forEach(c => c.resize()))
   })
 })
