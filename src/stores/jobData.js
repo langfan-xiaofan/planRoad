@@ -16,7 +16,6 @@ export const useJobDataStore = defineStore('jobData', () => {
   const matchResult = ref(null)
   const careerPath = ref(null)
 
-
   const targetJobLabel = computed(() => {
     const opt = jobOptions.find((j) => j.value === targetJobKey.value)
     return opt?.label || ''
@@ -56,27 +55,27 @@ export const useJobDataStore = defineStore('jobData', () => {
   const parseResumeMock = async (file, { onProgress } = {}) => {
     resetAll()
     setResumeFile({
-      name: file?.name || 'resume',
-      size: file?.size || 0,
-      type: file?.type || '',
+      name: file?.name || 'resume_linmumu.pdf',
+      size: file?.size || 102400,
+      type: file?.type || 'application/pdf',
       lastModified: file?.lastModified || Date.now(),
     })
 
     const parsed = {
-      name: '张三',
+      name: '林木木',
       education: '本科',
-      major: '计算机科学与技术',
+      major: '软件工程',
       targetJobKey: 'senior_fe',
-      skills: ['Vue3', 'JavaScript', 'TypeScript', 'Node.js', 'CSS3'],
-      skillScores: {  
-        '专业技能': 85,      // 对应 Vue 中的 scores['专业技能']
-        '逻辑思维': 78,      // 对应 Vue 中的 scores['逻辑思维']
-        '工程架构': 65,      // 对应 Vue 中的 scores['工程架构']
-        '沟通协作': 80,      // 对应 Vue 中的 scores['沟通协作']
-        '管理潜质': 55,      // 对应 Vue 中的 scores['管理潜质']
-        '创新学习': 90       // 对应 Vue 中的 scores['创新学习'] },
-    },
-  }
+      skills: ['Vue3 工程化', '微前端(Qiankun)', 'Node.js 中间层', '前端架构设计', '性能调优'],
+      skillScores: {
+        '前端工程化': 85,
+        '全栈与Node': 78,
+        '架构与性能': 65,
+        '业务沟通': 80,
+        '管理潜质': 55,
+        '创新认知': 90
+      }
+    }
 
     const progressSteps = [8, 22, 35, 52, 68, 82, 94, 100]
     for (const p of progressSteps) {
@@ -86,22 +85,18 @@ export const useJobDataStore = defineStore('jobData', () => {
 
     setResumeParsed(parsed)
     setTargetJobKey(parsed.targetJobKey)
-    const profile = buildCapabilityProfileMock(parsed)
-    setCapabilityProfile(profile)
 
-// 注意：如果 buildCapabilityProfileMock 内部逻辑依赖旧的英文 Key，它可能会覆盖或出错。
-    // 最安全的做法是：如果该函数不可控，我们直接使用 parsed 中的数据，或者确保它返回的数据也包含上述中文 Key。
-    // 这里为了保险，我们假设它只是做转换，如果它转换错了，我们优先保证 resumeParsed 是对的。
     try {
       const profile = buildCapabilityProfileMock(parsed)
-      // 如果 profile 里的 skillScores 也是错的，我们可以手动修正它，或者忽略它直接用 parsed 的
       if (profile && profile.skillScores) {
-         // 可选：如果 profile 数据也是错的，可以强制把正确的塞进去，或者只依赖 parsed
-         // 这里暂时保留原逻辑，但你要确保 request.js 里的 buildCapabilityProfileMock 也能处理中文 Key
-         setCapabilityProfile(profile)
+        setCapabilityProfile(profile)
+      } else {
+        // 兜底策略：如果 request 里的方法崩了，直接用 parsed 里的数据生成 Profile
+        setCapabilityProfile({ summary: '具备扎实的前端基础，正在向高阶架构师转型。', skillScores: parsed.skillScores })
       }
     } catch (e) {
       console.warn('Capability profile build skipped or failed, using raw parsed data', e)
+      setCapabilityProfile({ summary: '具备扎实的前端基础，正在向高阶架构师转型。', skillScores: parsed.skillScores })
     }
 
     return { parsed, profile: capabilityProfile.value }

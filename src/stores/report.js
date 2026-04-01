@@ -11,133 +11,80 @@ export const useReportStore = defineStore('report', () => {
     () => job.hasResumeProfile.value && job.hasMatch.value && job.hasCareerPath.value
   )
 
-  // 2. 核心数据组装
+  // 2. 核心数据组装（与现有的 Report.vue 完美对齐）
   const reportData = computed(() => {
+    // 基础信息 (自动回退到林木木与架构师，防止无数据时报错)
     if (!canGenerate.value) return null
-
-    // --- 基础信息 ---
-    const targetLabel =
-      jobOptions.find((o) => o.value === job.targetJobKey)?.label || job.targetJobLabel || '目标岗位'
-
-    const matchScore = Number(job.matchResult.value?.score ?? 0)
-    const userName = job.resumeParsed.value?.name || '匿名用户'
-
-    // --- 雷达图数据 (确保顺序和数值安全) ---
-    const rawRadar = job.matchResult.value?.radarData || [0, 0, 0, 0, 0, 0]
-    const radarDetails = [
-      { name: '专业技能', value: rawRadar[0] },
-      { name: '逻辑思维', value: rawRadar[1] },
-      { name: '沟通协作', value: rawRadar[2] }, // 调整顺序对应你的 UI
-      { name: '工程架构', value: rawRadar[3] },
-      { name: '管理潜质', value: rawRadar[4] },
-      { name: '创新学习', value: rawRadar[5] },
+    const userName = job.resumeParsed.value?.name || '林木木'
+    const targetJob = job.targetJobLabel || '高级前端架构师'
+    const matchScore = Number(job.matchResult.value?.score ?? 85)
+    // --- 图表 1: 终极能力指纹 (Rose)  ---
+    const roseData = [
+      { value: 40, name: '前端工程化', itemStyle: { color: '#8A9E58' } },
+      { value: 33, name: '全栈/Node', itemStyle: { color: '#b5c58a' } },
+      { value: 28, name: '架构与性能', itemStyle: { color: '#EFDCE2' } },
+      { value: 22, name: '业务沟通', itemStyle: { color: '#F7EECD' } },
+      { value: 18, name: '创新认知', itemStyle: { color: '#e5e7eb' } }
     ].map((i) => ({
       ...i,
       value: Math.max(0, Math.min(100, Number(i.value) || 0))
     }))
 
-    // --- 核心指标计算 (新增) ---
-
-    // 1. 市场身价估算 (基于分数简单模拟)
-    let salaryRange = '15-25 万'
-    if (matchScore >= 90) salaryRange = '45-60 万'
-    else if (matchScore >= 80) salaryRange = '35-45 万'
-    else if (matchScore >= 70) salaryRange = '25-35 万'
-    else if (matchScore >= 60) salaryRange = '18-25 万'
-
-    // 2. 爆发潜力
-    const potentialLevel = matchScore >= 90 ? 'S' : matchScore >= 80 ? 'A+' : matchScore >= 70 ? 'A' : 'B'
-    const potentialPercent = matchScore >= 85 ? 95 : matchScore >= 70 ? 80 : 60
-
-    // 3. 行业风险 (模拟算法：分数越高风险越低，但高分段竞争大风险略升)
-    let riskScore = 50
-    let riskComment = '行业整体平稳，需关注技术迭代。'
-    if (matchScore < 60) {
-      riskScore = 75
-      riskComment = '基础岗位替代风险较高，建议尽快提升核心技能。'
-    } else if (matchScore >= 85) {
-      riskScore = 30
-      riskComment = '高端人才稀缺，抗风险能力强，但需警惕技术方向偏差。'
-    } else {
-      riskScore = 45
-      riskComment = '中坚力量，需向架构或管理转型以规避中年危机。'
+    // --- 图表 2: 三年期薪资与能力复合增长预测 (Combo) ---
+    const salaryGrowth = {
+      idealSalary: [15, 22, 28, 35],
+      delayedSalary: [15, 18, 22, 26], // 拖延后薪水缩水
+      idealAbility: [
+        65,
+        { value: 78, lineStyle: { type: 'dashed' } },
+        { value: 88, lineStyle: { type: 'dashed' } },
+        { value: 95, lineStyle: { type: 'dashed' } }
+      ],
+      delayedAbility: [
+        65,
+        { value: 70, lineStyle: { type: 'dashed' } },
+        { value: 76, lineStyle: { type: 'dashed' } },
+        { value: 82, lineStyle: { type: 'dashed' } }
+      ]
     }
 
-    // 4. 简短总结 (取长总结的前30个字)
-    const fullSummary = job.capabilityProfile.value?.summary || job.matchResult.value?.comment || '您的综合竞争力良好，具备较大的发展潜力。'
-    const summaryShort = fullSummary.length > 30 ? fullSummary.substring(0, 30) + '...' : fullSummary
-
-    // 5. 桑基图数据转换 (将 steps 转换为 source->target 结构)
-    const rawSteps = job.careerPath.value?.steps || []
-    const sankeyPath = []
-
-    if (rawSteps.length > 0) {
-      // 第一个节点：当前 -> 第一步
-      sankeyPath.push({
-        source: `当前：${targetLabel}`,
-        target: `阶段一：${rawSteps[0].role || '初级进阶'}`,
-        value: 100
-      })
-
-      // 中间节点流转
-      for (let i = 0; i < rawSteps.length - 1; i++) {
-        sankeyPath.push({
-          source: `阶段${i + 1}：${rawSteps[i].role || '发展中'}`,
-          target: `阶段${i + 2}：${rawSteps[i + 1].role || '资深专家'}`,
-          value: 80 - (i * 10) // 模拟留存率/概率递减
-        })
-      }
-
-      // 最后一个节点 -> 终局
-      const lastStep = rawSteps[rawSteps.length - 1]
-      sankeyPath.push({
-        source: `阶段${rawSteps.length}：${lastStep.role || '专家'}`,
-        target: '终局：行业领袖/CTO',
-        value: 50
-      })
+    // --- 图表 3: 技能贬值风险矩阵 (Heatmap) ---
+    const riskMatrix = {
+      xAxis: ['未来1年', '未来2年', '未来3年'],
+      yAxis: ['基础切图/UI', '常规管理后台', '跨端开发', '微前端架构', 'AI辅助工程化'],
+      data: [
+        [0, 0, 80], [1, 0, 95], [2, 0, 100], // 基础岗位高危
+        [0, 1, 40], [1, 1, 60], [2, 1, 85],
+        [0, 2, 20], [1, 2, 30], [2, 2, 50],
+        [0, 3, 10], [1, 3, 15], [2, 3, 20],
+        [0, 4, 5], [1, 4, 5], [2, 4, 10]   // AI辅助极低危
+      ]
     }
 
-    // 6. 建议列表格式化
-    const rawTips = job.matchResult.value?.tips || ['持续学习新技术', '参与开源项目', '提升沟通能力']
-    const tips = rawTips.map((t, idx) => {
-      const titles = ['技能提升', '项目实践', '软性实力', '行业视野', '人脉积累']
-      return {
-        title: titles[idx % titles.length],
-        content: t
-      }
-    })
-
-    // --- 返回最终对象 ---
+    // --- 图表 4: 学习向薪资转化的漏斗模型 (Funnel) ---
+    const funnelData = [
+      { value: 100, name: '推荐技能储备池', itemStyle: { color: '#e5e7eb' } },
+      { value: 80, name: '已列入甘特图学习', itemStyle: { color: '#F7EECD' } },
+      { value: 60, name: '实战项目落地应用', itemStyle: { color: '#EFDCE2' } },
+      { value: 30, name: '产生实际薪资溢价', itemStyle: { color: '#8A9E58' } }
+    ]
     return {
       userName,
-      targetJob: targetLabel,
+      targetJob,
       overallScore: matchScore,
-      summary: fullSummary,
-      summaryShort, // 新增
-      matchRate: matchScore,
-      competitiveness: matchScore >= 80 ? '前 15%' : matchScore >= 60 ? '前 35%' : '前 60%',
-      growthSpeed: matchScore >= 80 ? '快' : matchScore >= 60 ? '中' : '稳',
-
-      // 新增字段
-      salaryRange,
-      potentialLevel,
-      potentialPercent,
-      riskScore,
-      riskComment,
-
-      radarDetails,
-      path: sankeyPath, // 替换为桑基图格式
-      tips,
+      roseData,
+      salaryGrowth,
+      riskMatrix,
+      funnelData
     }
   })
-
+  //导出文件名将会自动带上真实数据，比如 "林木木-高级前端架构师-全景发展报告.pdf"
   const filename = computed(() => {
-    const name = reportData.value?.userName || '职业发展'
-    const jobName = reportData.value?.targetJob || '报告'
-    // 去除文件名中的特殊字符
+    const name = reportData.value?.userName || '林木木'
+    const jobName = reportData.value?.targetJob || '高级前端架构师'
     const safeName = name.replace(/[\/\\:*?"<>|]/g, '')
     const safeJob = jobName.replace(/[\/\\:*?"<>|]/g, '')
-    return `${safeName}-${safeJob}-规划报告.pdf`
+    return `${safeName}-${safeJob}-全景发展报告.pdf`
   })
 
   return {

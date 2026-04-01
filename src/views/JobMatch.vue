@@ -132,19 +132,22 @@ const initCharts = () => {
   }
 
   // ==================== 2. 核心技能缺口图  ====================
-  if (scatterRoiRef.value) { 
+ if (scatterRoiRef.value) { 
     const gapChart = echarts.init(scatterRoiRef.value)
+    
+    // （percent代表他算出来的占比）
     const rawData = [
-      { name: '微前端 (Qiankun)', current: 30, target: 80 },
-      { name: 'Vite 构建优化', current: 45, target: 85 },
-      { name: 'Node.js 性能监控', current: 50, target: 80 },
-      { name: 'Pinia 状态管理', current: 70, target: 90 }
+      { name: '微前端 (Qiankun)', percent: 30 },
+      { name: 'Vite 构建优化', percent: 45 },
+      { name: 'Node.js 性能监控', percent: 50 },
+      { name: 'Pinia 状态管理', percent: 70 }
     ]
-    // 提取 X、Y 轴数据，按缺口大小降序排列，缺口最大的在最上面
+    /// 自动计算缺口：默认满分按 100 算，缺口 = 100 - 掌握百分比
     const sortedData = rawData.map(item => ({
-      ...item,
-      gap: item.target - item.current
-    })).sort((a, b) => a.gap - b.gap) // ECharts 横向柱图默认是从下往上画的
+      name: item.name,
+      current: item.percent,
+      gap: 100 - item.percent // 算出差多少
+    })).sort((a, b) => a.gap - b.gap) // 按缺口大小排序
 
     gapChart.setOption({
       grid: { top: '15%', bottom: '15%', left: '5%', right: '8%', containLabel: true },
