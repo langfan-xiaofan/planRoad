@@ -1,67 +1,34 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-    <div class="text-center max-w-md">
-      <!-- 404 图标 -->
-      <div class="mb-8 relative inline-block">
-        <div class="absolute inset-0 bg-teal-100 rounded-full blur-xl opacity-50 animate-pulse"></div>
-        <el-icon :size="80" class="text-teal-500 relative z-10"><WarningFilled /></el-icon>
-      </div>
-      
-      <h1 class="text-6xl font-extrabold text-gray-800 mb-4 tracking-tight">404</h1>
-      <p class="text-xl text-gray-600 mb-2">哎呀，页面走丢了</p>
-      <p class="text-gray-400 mb-8">您访问的页面不存在或已被移除</p>
-      
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <el-button type="primary" round size="large" @click="goHome" class="shadow-lg shadow-teal-200">
-          返回首页
-        </el-button>
-        <el-button plain round size="large" @click="goBack">
-          返回上一页
-        </el-button>
-      </div>
-      
-      <div class="mt-12 pt-8 border-t border-gray-200">
-        <p class="text-xs text-gray-400">
-          如果是演示模式中断，请尝试 <span class="text-teal-600 cursor-pointer hover:underline" @click="restartDemo">重新启动演示</span>
+  <div class="h-full flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-10 shadow-sm border border-brand-cream/80 text-center max-w-md w-full relative overflow-hidden group">
+      <div class="absolute -right-16 -top-16 w-48 h-48 bg-brand-pink/20 rounded-full blur-3xl transition-all duration-700 group-hover:bg-brand-pink/30"></div>
+      <div class="absolute -left-16 -bottom-16 w-48 h-48 bg-brand-green/20 rounded-full blur-3xl transition-all duration-700 group-hover:bg-brand-green/30"></div>
+
+      <div class="relative z-10 flex flex-col items-center">
+        <div class="w-20 h-20 bg-brand-pink/10 rounded-full flex items-center justify-center mb-6 shadow-inner">
+          <el-icon class="text-4xl text-brand-pink"><Warning /></el-icon>
+        </div>
+        
+        <h1 class="text-7xl font-black text-brand-dark mb-2 tracking-tighter drop-shadow-sm">404</h1>
+        <h2 class="text-xl font-extrabold text-brand-dark mb-3">哎呀，偏离了职业航线！</h2>
+        
+        <p class="text-sm text-gray-500 mb-8 leading-relaxed">
+          您访问的页面就像那些石沉大海的简历一样，找不到了。<br>
+          不如回到首页，让 AI 帮您重新规划航向吧。
         </p>
+        
+        <el-button
+          round
+          class="!bg-brand-green !text-white !border-none shadow-md shadow-brand-green/30 hover:-translate-y-0.5 transition-transform font-bold px-8 py-5 text-base"
+          @click="$router.push('/')"
+        >
+          返回首页基地
+        </el-button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-import { WarningFilled } from '@element-plus/icons-vue'
-import DemoTourManager from '@/utils/demoTour'
-
-const router = useRouter()
-
-const goHome = () => {
-  router.push('/')
-}
-
-const goBack = () => {
-  if (window.history.length > 1) {
-    router.back()
-  } else {
-    router.push('/')
-  }
-}
-
-const restartDemo = () => {
-  const tour = new DemoTourManager()
-  tour.start()
-}
+import { Warning } from '@element-plus/icons-vue'
 </script>
-
-<style scoped>
-/*添加一些简单的进入动画 */
-.v-enter-active,
-.v-leave-active {
-  transition: opacity 0.3s ease;
-}
-.v-enter-from,
-.v-leave-to {
-  opacity: 0;
-}
-</style>

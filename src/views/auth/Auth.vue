@@ -1,10 +1,11 @@
 <template>
+  <!-- 登录注册页 -->
   <div class="min-h-screen w-full bg-[#F7EECD]/40 flex items-center justify-center relative overflow-hidden font-sans">
     <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#EFDCE2]/60 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-[#C2D68F]/40 rounded-full blur-3xl pointer-events-none"></div>
 
     <div class="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl shadow-[#C2D68F]/20 p-8 relative z-10 border border-white">
-      
+      <!-- 登录注册页标题 -->
       <div class="text-center mb-8">
         <div class="w-16 h-16 bg-gradient-to-br from-[#C2D68F] to-[#8A9E58] rounded-2xl mx-auto flex items-center justify-center shadow-md mb-4 text-white">
           <el-icon :size="32"><Compass /></el-icon>
@@ -12,7 +13,7 @@
         <h2 class="text-2xl font-extrabold text-gray-800 tracking-wider">{{ viewTitles[currentView] }}</h2>
         <p class="text-sm text-gray-400 mt-2">{{ viewSubtitles[currentView] }}</p>
       </div>
-
+      <!-- 登录注册页表单切换 -->
       <transition name="fade-slide" mode="out-in">
         <div v-if="currentView === 'login'" key="login">
           
@@ -26,7 +27,7 @@
                     :class="loginType === 'email' ? 'text-[#8A9E58]' : 'text-gray-400'"
                     @click="loginType = 'email'">免密邮箱登录</button>
           </div>
-
+          <!-- 账号密码登录表单 -->
           <el-form v-if="loginType === 'account'" :model="accountForm" :rules="accountRules" ref="accountFormRef" @keyup.enter="handleLogin">
             <el-form-item prop="username">
               <el-input v-model="accountForm.username" placeholder="请输入用户名" size="large" :prefix-icon="User" class="custom-input" />
@@ -42,7 +43,7 @@
               登 录
             </el-button>
           </el-form>
-
+          <!-- 免密邮箱登录表单 -->
           <el-form v-else :model="emailForm" :rules="emailRules" ref="emailFormRef" @keyup.enter="handleLogin">
             <el-form-item prop="email">
               <el-input v-model="emailForm.email" placeholder="请输入邮箱地址" size="large" :prefix-icon="Message" class="custom-input" />
@@ -61,7 +62,7 @@
             </el-button>
           </el-form>
         </div>
-
+        <!-- 注册表单切换 -->
         <div v-else-if="currentView === 'register'" key="register">
           <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef">
             <el-form-item prop="username">
@@ -87,7 +88,7 @@
             </el-button>
           </el-form>
         </div>
-
+        <!-- 忘记密码表单切换 -->
         <div v-else-if="currentView === 'forgot'" key="forgot">
           <el-form :model="forgotForm" :rules="forgotRules" ref="forgotFormRef">
             <el-form-item prop="email">
@@ -111,7 +112,7 @@
           </el-form>
         </div>
       </transition>
-
+      <!-- 登录注册页切换 -->
       <div class="mt-8 text-center text-sm text-gray-500">
         <template v-if="currentView === 'login'">
           还没有账号？ 

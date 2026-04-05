@@ -1,6 +1,6 @@
 <template>
   <div class="h-full flex flex-col gap-3 overflow-hidden p-2">
-    
+    <!-- 解析报告标题 -->
     <div class="shrink-0 bg-white rounded-3xl p-5 shadow-sm border border-brand-cream flex justify-between items-center">
       <div>
         <h2 class="text-xl font-extrabold text-brand-dark flex items-center gap-2">
@@ -13,7 +13,7 @@
         确认画像并前往匹配 <el-icon class="ml-1"><Right /></el-icon>
       </el-button>
     </div>
-
+<!-- 个人信息展示 -->
     <div class="shrink-0 bg-white rounded-2xl px-6 py-4 shadow-sm border border-brand-cream flex flex-wrap gap-8 items-center relative overflow-hidden">
       <div class="absolute right-0 top-0 w-32 h-32 bg-brand-green/5 rounded-full blur-2xl pointer-events-none"></div>
       
@@ -36,12 +36,12 @@
           <div class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"><el-icon><Calendar /></el-icon></div>
           <span class="font-bold text-gray-700">{{ userInfo.age }} <span class="text-xs font-normal text-gray-400">岁</span></span>
         </div>
-        
+        <!-- 位置信息 -->
         <div class="flex items-center gap-2 text-sm text-gray-600">
           <div class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"><el-icon><Location /></el-icon></div>
           <span class="font-bold text-gray-700">{{ userInfo.location }}</span>
         </div>
-
+        <!-- 工作经验 -->
         <div class="flex items-center gap-2 text-sm">
           <div class="w-7 h-7 rounded-full flex items-center justify-center"
                :class="userInfo.isStudent ? 'bg-brand-yellow/10 text-brand-yellow-dark' : 'bg-brand-pink/10 text-brand-pink'">
@@ -57,7 +57,7 @@
         </div>
       </div>
     </div>
-
+<!-- 能力雷达图 -->
     <div class="flex-1 grid grid-cols-1 md:grid-cols-2 grid-rows-2 gap-4 min-h-0">
       
       <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col relative h-full">
@@ -67,7 +67,7 @@
         </div>
         <div ref="radarChartRef" class="flex-1 w-full min-h-0"></div>
       </div>
-
+<!-- 人岗初始匹配度预演 -->
       <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col relative h-full">
         <div class="shrink-0 mb-2">
           <h3 class="font-extrabold text-brand-dark text-base">人岗初始匹配度预演</h3>
@@ -75,7 +75,7 @@
         </div>
         <div ref="gaugeChartRef" class="flex-1 w-full min-h-0"></div>
       </div>
-
+<!-- 核心技能权重图谱 -->
       <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col relative h-full">
         <div class="shrink-0 mb-2">
           <h3 class="font-extrabold text-brand-dark text-base">核心技能权重图谱</h3>
@@ -83,13 +83,14 @@
         </div>
         <div ref="wordCloudRef" class="flex-1 w-full min-h-0"></div>
       </div>
-
+<!-- 职业履历与项目时间轴 -->
       <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col h-full">
         <div class="shrink-0 mb-4">
           <h3 class="font-extrabold text-brand-dark text-base">职业履历与项目时间轴</h3>
           <p class="text-xs text-gray-400">AI已自动识别经历连续性与潜在空窗期</p>
         </div>
-        <div class="flex-1 overflow-y-auto pr-4 custom-scrollbar">
+<!-- 有项目经历 -->
+        <div v-if="hasExperiences" class="flex-1 overflow-y-auto pr-4 custom-scrollbar">
           <el-timeline>
             <el-timeline-item center timestamp="2023.09 - 至今" placement="top" color="#8A9E58">
               <div class="bg-brand-green/5 p-3 rounded-lg border border-brand-green/20">
@@ -116,6 +117,23 @@
             </el-timeline-item>
           </el-timeline>
         </div>
+<!-- 无项目经历 -->
+        <div v-else class="flex-1 flex flex-col items-start justify-start bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 p-5 text-left group transition-colors hover:bg-brand-green/5 hover:border-brand-green/30">
+          
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-7 h-7 bg-brand-green/10 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <el-icon class="text-brand-green text-sm"><MagicStick /></el-icon>
+            </div>
+            <h4 class="text-sm font-extrabold text-brand-dark">全新起点，无限可能 ✨</h4>
+          </div>
+          
+          <p class="text-xs text-gray-500 leading-relaxed pl-9">
+            AI 未提取到过往项目经历，这对于学生而言非常正常。<br/>
+            在后续环节中，系统将为您重点规划 <span class="text-brand-green font-bold bg-brand-green/10 px-1 rounded">高含金量练手项目</span>，助您完成从 0 到 1 的破局。
+          </p>
+          
+        </div>
+
       </div>
 
     </div>
@@ -124,10 +142,11 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-// ✅ 新增了大量 Element Plus 图标用于个人信息展示
+// 引用Element Plus 图标
 import { 
   Document, Right, Warning, 
   User, Location, Calendar, Suitcase, Reading, Male, Female 
+  , MagicStick
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import 'echarts-wordcloud'

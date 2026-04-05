@@ -79,8 +79,8 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: NotFound,
-    meta: { title: '页面未找到' }
+    component: () => import('../views/NotFound.vue'),
+    meta: { title: '404 - 页面不存在' }
   }
 ]
 

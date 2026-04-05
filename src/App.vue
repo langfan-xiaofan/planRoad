@@ -77,16 +77,16 @@
           </div>
         </div>
         <!-- 搜索框 -->
-        <div class="flex items-center gap-5">
+        <div class="flex items-center gap-5 mr-12">
           <div class="relative hidden md:block group">
             <el-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-brand-green transition-colors"><Search /></el-icon>
             <input type="text" placeholder="探索你的职业..." class="pl-9 pr-4 py-1.5 bg-brand-cream/30 border border-brand-cream rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-green/50 focus:bg-white w-64 transition-all text-brand-dark placeholder-gray-400">
           </div>
           <!-- 通知图标 -->
-          <div class="w-9 h-9 rounded-full bg-brand-cream/50 flex items-center justify-center cursor-pointer hover:bg-brand-pink hover:text-white transition-colors relative text-gray-500">
+          <!-- <div class="w-9 h-9 rounded-full bg-brand-cream/50 flex items-center justify-center cursor-pointer hover:bg-brand-pink hover:text-white transition-colors relative text-gray-500">
             <el-icon :size="18"><Bell /></el-icon>
             <span class="absolute top-1 right-1 w-2 h-2 bg-brand-yellow rounded-full border border-white"></span>
-          </div>
+          </div> -->
         </div>
       </header>
       <!-- 主内容区域内容 -->
