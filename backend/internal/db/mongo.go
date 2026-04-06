@@ -12,19 +12,18 @@ import (
 var MongoDatabase *mongo.Database
 var MongoConfig = config.Conf.MongoDb
 
-func MongoDbInit() error {
+func MongoDbInit() {
 	clientOptions := options.Client().ApplyURI(MongoConfig.Url)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	client, err := mongo.Connect(clientOptions)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	MongoDatabase = client.Database(MongoConfig.Database)
-	return nil
 }

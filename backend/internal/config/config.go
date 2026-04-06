@@ -1,8 +1,6 @@
 package config
 
 import (
-	"errors"
-
 	"github.com/spf13/viper"
 )
 
@@ -52,14 +50,14 @@ type Cloudflare struct {
 	PublicKey  string `mapstructure:"PublicKey"`
 }
 
-func Init() error {
+func Init() {
 	viper.SetConfigFile("configs/config.yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
-		return errors.New("读取配置失败")
+		panic(err)
 	}
 	if err := viper.Unmarshal(Conf); err != nil {
-		return errors.New("映射配置失败")
+		panic(err)
 	}
-	return nil
+
 }
