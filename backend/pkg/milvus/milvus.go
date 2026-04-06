@@ -148,3 +148,5 @@ func (m *Milvus) Search(collectionName string, vector []float32, topK int64, sp 
 	// }
 	return results, nil
 }
+
+func (m *Milvus) Filter()
