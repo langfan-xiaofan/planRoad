@@ -11,7 +11,7 @@ var Redis = config.Conf.Redis
 var RedisDatabase *redis.Client
 var ctx = context.Background()
 
-func RedisInit() error {
+func RedisInit() {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     Redis.Url,
 		Password: Redis.Password,
@@ -19,8 +19,7 @@ func RedisInit() error {
 	})
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
-		return err
+		panic(err)
 	}
 	RedisDatabase = rdb
-	return nil
 }

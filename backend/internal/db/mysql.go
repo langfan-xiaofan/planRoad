@@ -10,17 +10,16 @@ import (
 
 var MysqlDatabase *gorm.DB
 
-func MysqlInit() error {
+func MysqlInit() {
 	var err error
 	MysqlDatabase, err = gorm.Open(mysql.Open(config.Conf.Dsn), &gorm.Config{})
 	if err != nil {
-		return err
+		panic(err)
 	}
 	err = MysqlDatabase.AutoMigrate(
 		&model.User{},
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
