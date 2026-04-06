@@ -1,273 +1,301 @@
 <template>
-  <div class="h-full flex flex-col gap-3 overflow-hidden p-2">
-    <!-- 解析报告标题 -->
-    <div class="shrink-0 bg-white rounded-3xl p-5 shadow-sm border border-brand-cream flex justify-between items-center">
-      <div>
-        <h2 class="text-xl font-extrabold text-brand-dark flex items-center gap-2">
-          <el-icon class="text-brand-green"><Document /></el-icon>
-          AI 简历深度解析报告
-        </h2>
-        <p class="text-sm text-gray-500 mt-1">已为你提取核心能力特征，生成多维结构化能力画像（基准线）。</p>
-      </div>
-      <el-button round class="!bg-brand-green !text-white !border-none shadow-md hover:opacity-90 font-bold px-6" @click="$router.push('/match')">
-        确认画像并前往匹配 <el-icon class="ml-1"><Right /></el-icon>
-      </el-button>
-    </div>
-<!-- 个人信息展示 -->
-    <div class="shrink-0 bg-white rounded-2xl px-6 py-4 shadow-sm border border-brand-cream flex flex-wrap gap-8 items-center relative overflow-hidden">
-      <div class="absolute right-0 top-0 w-32 h-32 bg-brand-green/5 rounded-full blur-2xl pointer-events-none"></div>
-      
-      <div class="flex items-center gap-4 border-r border-gray-100 pr-8 z-10">
-        <div class="w-11 h-11 rounded-full bg-brand-pink text-white flex items-center justify-center font-bold text-lg shadow-inner">
-          {{ userInfo.name.charAt(0) }}
-        </div>
-        <div class="flex flex-col">
-          <h3 class="text-lg font-extrabold text-brand-dark flex items-center gap-1.5 leading-tight">
-            {{ userInfo.name }}
-            <el-icon v-if="userInfo.gender === 'male'" class="text-blue-400 text-sm"><Male /></el-icon>
-            <el-icon v-else class="text-pink-400 text-sm"><Female /></el-icon>
-          </h3>
-          <span class="text-[10px] text-brand-green bg-brand-green/10 px-1.5 py-0.5 rounded mt-1 w-max">当前解析对象</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-8 flex-1 z-10">
-        <div class="flex items-center gap-2 text-sm text-gray-600">
-          <div class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"><el-icon><Calendar /></el-icon></div>
-          <span class="font-bold text-gray-700">{{ userInfo.age }} <span class="text-xs font-normal text-gray-400">岁</span></span>
-        </div>
-        <!-- 位置信息 -->
-        <div class="flex items-center gap-2 text-sm text-gray-600">
-          <div class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"><el-icon><Location /></el-icon></div>
-          <span class="font-bold text-gray-700">{{ userInfo.location }}</span>
-        </div>
-        <!-- 工作经验 -->
-        <div class="flex items-center gap-2 text-sm">
-          <div class="w-7 h-7 rounded-full flex items-center justify-center"
-               :class="userInfo.isStudent ? 'bg-brand-yellow/10 text-brand-yellow-dark' : 'bg-brand-pink/10 text-brand-pink'">
-            <el-icon v-if="userInfo.isStudent"><Reading /></el-icon>
-            <el-icon v-else><Suitcase /></el-icon>
+  <!-- 解析简历页面 -->
+  <div class="h-full flex flex-col p-4 overflow-hidden relative">
+    <!-- 解析简历表单 -->
+    <transition name="el-fade-in">
+      <div v-if="!jobStore.hasResumeProfile" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 overflow-y-auto">
+        <div class="w-full max-w-2xl bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-[#EFDCE2]/60 shadow-sm flex flex-col items-center">
+          <!-- 上传简历图标 -->
+          <div class="w-16 h-16 bg-[#F7EECD] rounded-full flex items-center justify-center mb-6 shadow-sm border border-[#C2D68F]">
+            <el-icon class="text-3xl text-[#8A9E58]"><DocumentAdd /></el-icon>
           </div>
-          <div class="flex flex-col leading-tight">
-            <span class="text-xs text-gray-400">{{ userInfo.isStudent ? '当前状态' : '工作经验' }}</span>
-            <span class="font-bold" :class="userInfo.isStudent ? 'text-brand-yellow-dark' : 'text-brand-dark'">
-              {{ userInfo.isStudent ? '在读学生 (未毕业)' : userInfo.experience }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-<!-- 能力雷达图 -->
-    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 grid-rows-2 gap-4 min-h-0">
-      
-      <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col relative h-full">
-        <div class="shrink-0 mb-2">
-          <h3 class="font-extrabold text-brand-dark text-base">六维能力雷达图</h3>
-          <p class="text-xs text-gray-400">实线为您的得分，虚线为同岗位行业平均分</p>
-        </div>
-        <div ref="radarChartRef" class="flex-1 w-full min-h-0"></div>
-      </div>
-<!-- 人岗初始匹配度预演 -->
-      <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col relative h-full">
-        <div class="shrink-0 mb-2">
-          <h3 class="font-extrabold text-brand-dark text-base">人岗初始匹配度预演</h3>
-          <p class="text-xs text-gray-400">基于当前解析结果与默认目标岗位（前端开发）的契合度预估</p>
-        </div>
-        <div ref="gaugeChartRef" class="flex-1 w-full min-h-0"></div>
-      </div>
-<!-- 核心技能权重图谱 -->
-      <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col relative h-full">
-        <div class="shrink-0 mb-2">
-          <h3 class="font-extrabold text-brand-dark text-base">核心技能权重图谱</h3>
-          <p class="text-xs text-gray-400">词条大小反映该技能在您过往经历中的权重及贡献率</p>
-        </div>
-        <div ref="wordCloudRef" class="flex-1 w-full min-h-0"></div>
-      </div>
-<!-- 职业履历与项目时间轴 -->
-      <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col h-full">
-        <div class="shrink-0 mb-4">
-          <h3 class="font-extrabold text-brand-dark text-base">职业履历与项目时间轴</h3>
-          <p class="text-xs text-gray-400">AI已自动识别经历连续性与潜在空窗期</p>
-        </div>
-<!-- 有项目经历 -->
-        <div v-if="hasExperiences" class="flex-1 overflow-y-auto pr-4 custom-scrollbar">
-          <el-timeline>
-            <el-timeline-item center timestamp="2023.09 - 至今" placement="top" color="#8A9E58">
-              <div class="bg-brand-green/5 p-3 rounded-lg border border-brand-green/20">
-                <h4 class="font-bold text-gray-800 text-sm">某科技公司 - 前端开发实习生</h4>
-                <p class="text-xs text-gray-500 mt-1">独立负责 Vue3 后台管理系统模块开发...</p>
+          <!-- 上传简历标题 -->
+          <h2 class="text-2xl font-extrabold text-brand-dark mb-2">上传简历开始解析</h2>
+          <p class="text-sm text-gray-400 mb-8 text-center">AI 将自动提取核心技能，为你生成专属的六维能力模型与发展建议</p>
+          <!-- 上传简历文件区域 --> 
+          <div class="w-full mb-6">
+            <el-upload
+              class="resume-uploader"
+              drag
+              action="#"
+              :auto-upload="false"
+              :show-file-list="true"
+              :limit="1"
+              :on-change="handleFileChange"
+              :on-remove="handleFileRemove"
+              accept=".pdf,.doc,.docx"
+            >
+              <el-icon class="el-icon--upload text-[#C2D68F]"><upload-filled /></el-icon>
+              <div class="el-upload__text text-gray-500">
+                将文件拖到此处，或 <em class="el-upload__text text-[#8A9E58] font-bold not-italic">点击上传</em>
               </div>
-            </el-timeline-item>
-            
-            <el-timeline-item center timestamp="2023.05 - 2023.08" placement="top" color="#F59E0B">
-              <div class="bg-brand-yellow/10 p-3 rounded-lg border border-brand-yellow/30 flex items-start gap-2">
-                <el-icon class="text-brand-yellow mt-0.5"><Warning /></el-icon>
-                <div>
-                  <h4 class="font-bold text-brand-yellow-dark text-sm">空窗期 (约3个月)</h4>
-                  <p class="text-xs text-gray-500 mt-1">AI 提示：可能在后续面试中被问及，建议准备合理解释。</p>
+              <template #tip>
+                <div class="el-upload__tip text-center text-xs text-gray-400 mt-2">
+                  支持 PDF, DOC, DOCX 格式文件，大小不超过 10MB
+                </div>
+              </template>
+            </el-upload>
+          </div>
+          <!-- 个人介绍输入框 --> 
+          <div class="w-full mb-8">
+            <h3 class="text-sm font-bold text-gray-700 mb-2">个人介绍 (选填)</h3>
+            <el-input
+              v-model="personalIntro"
+              type="textarea"
+              :rows="4"
+              placeholder="可以在此补充简历中未体现的个人亮点、职业期望或技能说明..."
+              class="custom-intro-input"
+              resize="none"
+            />
+          </div>
+          <!-- 解析按钮按钮 -->
+          <div class="w-full flex justify-center">
+            <el-button 
+              round 
+              class="!bg-[#8A9E58] !text-white !border-none shadow-md hover:opacity-90 font-bold px-10 py-5 text-base w-full max-w-sm" 
+              :loading="isParsing"
+              :disabled="!selectedFile && !personalIntro.trim()"
+              @click="startParse"
+            >
+              {{ isParsing ? 'AI 正在深度解析...' : '开始智能解析' }}
+            </el-button>
+          </div>
+
+        </div>
+      </div>
+    </transition>
+    <!-- 解析简历报告区域 -->
+    <div v-if="jobStore.hasResumeProfile" class="flex-1 flex flex-col min-h-0 bg-white/40 backdrop-blur-md rounded-3xl p-6 border border-brand-pink/30 shadow-sm overflow-y-auto">
+      <div class="flex items-center justify-between mb-6 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-brand-pink/30">
+            <el-icon class="text-2xl text-brand-green"><Document /></el-icon>
+          </div>
+          <div>
+            <h2 class="text-xl font-extrabold text-brand-dark leading-tight">简历深度解析报告</h2>
+            <p class="text-sm text-gray-500">AI 已完成对您的多维能力评估</p>
+          </div>
+        </div>
+        <!-- 重新上传按钮 -->
+        <el-button round class="!bg-brand-pink !text-gray-700 !border-none hover:bg-brand-pink/80 font-bold px-5" @click="jobStore.resetAll">
+          <el-icon class="mr-1"><RefreshRight /></el-icon> 重新上传
+        </el-button>
+      </div>
+      <!-- 解析简历报告内容区域 -->
+      <div class="flex-1 min-h-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+          <div class="bg-white rounded-3xl p-5 shadow-sm border border-brand-pink/20 flex flex-col relative">
+            <div class="shrink-0 mb-2">
+              <h3 class="font-extrabold text-brand-dark text-base">六维能力模型</h3>
+              <p class="text-xs text-gray-400">基于您过往经历的客观量化评分</p>
+            </div>
+            <div ref="radarRef" class="flex-1 w-full min-h-0"></div>
+          </div>
+          <!-- 能力总结与发展建议区域 -->
+          <div class="bg-white rounded-3xl p-6 shadow-sm border border-brand-pink/20 flex flex-col">
+            <div class="shrink-0 mb-4">
+              <h3 class="font-extrabold text-brand-dark text-base mb-1">能力总结与发展建议</h3>
+              <el-tag effect="light" type="success" round size="small" class="bg-brand-cream/50 text-brand-green border-none font-bold">
+                已提炼核心优势
+              </el-tag>
+            </div>
+            <!-- 核心优势区域 -->
+            <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <div class="space-y-4">
+                <div class="bg-gray-50/80 rounded-2xl p-4 border border-gray-100">
+                  <h4 class="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <el-icon class="text-brand-pink"><StarFilled /></el-icon> 核心优势
+                  </h4>
+                  <ul class="text-sm text-gray-600 space-y-1.5 list-disc pl-5 marker:text-brand-green">
+                    <li>具备扎实的 <strong>前端工程化</strong> 基础，在组件库建设和构建工具有较深积累。</li>
+                    <li>沟通与业务理解能力突出，能在团队中起到关键桥梁作用。</li>
+                  </ul>
+                </div>
+                <!-- 潜在瓶颈区域 -->
+                <div class="bg-[#F7EECD]/20 rounded-2xl p-4 border border-[#EFDCE2]/30">
+                  <h4 class="text-sm font-bold text-[#8A9E58] mb-2 flex items-center gap-2">
+                    <el-icon><WarningFilled /></el-icon> 潜在瓶颈
+                  </h4>
+                  <p class="text-sm text-gray-600 leading-relaxed">
+                    在<strong>架构设计</strong>与<strong>底层性能调优</strong>方面经验略显不足，若期望晋升高级岗，需加强微前端等复杂场景的实战经验。
+                  </p>
+                </div>
+                <!-- 下一步行动建议区域 -->
+                <div class="bg-brand-green/5 rounded-2xl p-4 border border-brand-green/20">
+                  <h4 class="text-sm font-bold text-brand-dark mb-2">下一步行动建议</h4>
+                  <p class="text-sm text-gray-600 leading-relaxed">
+                    建议前往 <span class="text-brand-pink font-bold">人岗匹配</span> 页面，选择您的目标岗位，查看具体的技能缺口，并生成量身定制的学习路径。
+                  </p>
                 </div>
               </div>
-            </el-timeline-item>
-
-            <el-timeline-item center timestamp="2021.09 - 2023.05" placement="top" color="#8A9E58">
-              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <h4 class="font-bold text-gray-800 text-sm">校内创新创业项目 - 核心成员</h4>
-                <p class="text-xs text-gray-500 mt-1">参与“互联网+”大赛，负责前端小程序界面搭建。</p>
-              </div>
-            </el-timeline-item>
-          </el-timeline>
-        </div>
-<!-- 无项目经历 -->
-        <div v-else class="flex-1 flex flex-col items-start justify-start bg-gray-50/80 rounded-2xl border border-dashed border-gray-200 p-5 text-left group transition-colors hover:bg-brand-green/5 hover:border-brand-green/30">
-          
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-7 h-7 bg-brand-green/10 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <el-icon class="text-brand-green text-sm"><MagicStick /></el-icon>
             </div>
-            <h4 class="text-sm font-extrabold text-brand-dark">全新起点，无限可能 ✨</h4>
+            <!-- 前往人岗匹配按钮 -->
+            <div class="shrink-0 mt-5 flex justify-end">
+              <el-button round class="!bg-brand-green !text-white !border-none shadow-md hover:opacity-90 font-bold px-6" @click="$router.push('/match')">
+                前往人岗匹配 <el-icon class="ml-1"><Right /></el-icon>
+              </el-button>
+            </div>
           </div>
-          
-          <p class="text-xs text-gray-500 leading-relaxed pl-9">
-            AI 未提取到过往项目经历，这对于学生而言非常正常。<br/>
-            在后续环节中，系统将为您重点规划 <span class="text-brand-green font-bold bg-brand-green/10 px-1 rounded">高含金量练手项目</span>，助您完成从 0 到 1 的破局。
-          </p>
-          
         </div>
-
       </div>
-
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-// 引用Element Plus 图标
-import { 
-  Document, Right, Warning, 
-  User, Location, Calendar, Suitcase, Reading, Male, Female 
-  , MagicStick
-} from '@element-plus/icons-vue'
+import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { DocumentAdd, UploadFilled, Document, RefreshRight, StarFilled, WarningFilled, Right } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import 'echarts-wordcloud'
+import { useJobDataStore } from '@/stores/jobData'
 
-// ==================== 个人基本信息数据 ====================
-// 在真实场景下，这部分数据由你上传简历后AI解析返回
-const userInfo = ref({
-  name: '林木木',
-  gender: 'female', // 'male' 或 'female'
-  age: 21,
-  location: '浙江省杭州市',
-  isStudent: true, // true 表示在读，false 表示已工作
-  experience: '应届生' // 如果 isStudent 为 false，这里可以是 '3年' 等
-})
+const router = useRouter()
+const jobStore = useJobDataStore()
 
-// ==================== 图表 DOM 引用 ====================
-const radarChartRef = ref(null)
-const gaugeChartRef = ref(null)
-const wordCloudRef = ref(null)
-let charts = []
+// 空状态下的表单数据
+const selectedFile = ref(null)
+const personalIntro = ref('')
+const isParsing = ref(false)
 
-const initCharts = () => {
-  // 1. 六维能力雷达图
-  // 1. 六维能力雷达图
-  if (radarChartRef.value) {
-    const radarChart = echarts.init(radarChartRef.value)
-    radarChart.setOption({
-      tooltip: { trigger: 'item' },
-      
-      // 1：将图例改为垂直排列，并固定在图表容器的右侧垂直居中位置
-      legend: { 
-        orient: 'vertical', 
-        right: '30%', 
-        top: 'center', 
-        data: ['我的画像', '行业平均'], 
-        icon: 'circle', 
-        itemWidth: 10,
-        textStyle: { fontSize: 11 }
-      },
-      
-      radar: {
-        indicator: [
-          { name: '技术储备', max: 100 }, { name: '沟通协作', max: 100 },
-          { name: '项目管理', max: 100 }, { name: '创新思维', max: 100 },
-          { name: '执行落地', max: 100 }, { name: '持续学习', max: 100 }
-        ],
-        radius: '45%',
-        
-        // 2：中心点为 ['42%', '55%']
-        // 42% (X轴向左移)：给右侧的图例让出绝对空间，防止重叠
-        // 55% (Y轴向下移)：把上方被切掉的“技术储备”等文字拉回到可视区域内
-        center: ['42%', '55%'], 
-        
-        splitNumber: 4,
-        axisName: { color: '#4b5563', fontSize: 10, fontWeight: 'bold' },
-        splitArea: { areaStyle: { color: ['#f9fafb', '#ffffff'] } }
-      },
-      series: [{
-        type: 'radar',
-        data: [
-          { value: [85, 70, 60, 75, 88, 92], name: '我的画像', itemStyle: { color: '#8A9E58' }, areaStyle: { color: 'rgba(138, 158, 88, 0.3)' }, lineStyle: { width: 2 } },
-          { value: [75, 80, 70, 65, 80, 85], name: '行业平均', itemStyle: { color: '#9ca3af' }, lineStyle: { type: 'dashed', width: 2 }, areaStyle: { color: 'transparent' } }
-        ]
-      }]
+// 图表引用
+const radarRef = ref(null)
+let chartInstance = null
+
+// --- 文件选择与解析逻辑 ---
+const handleFileChange = (uploadFile, uploadFiles) => {
+  // 只保存最新选择的文件
+  selectedFile.value = uploadFile.raw
+}
+
+const handleFileRemove = () => {
+  selectedFile.value = null
+}
+
+const startParse = async () => {
+  if (!selectedFile.value && !personalIntro.value.trim()) return
+
+  isParsing.value = true
+  try {
+    // 调用 store 的方法，后续可修改该方法接受文本和文件
+    await jobStore.parseResumeMock(selectedFile.value, { 
+      onProgress: (p) => {
+        // 展示进度条在这里做
+
+        console.log(`解析进度: ${p}%`)
+      }
     })
-    charts.push(radarChart)
-  }
-
-  // 2. 人岗匹配度预演
-  if (gaugeChartRef.value) {
-    const gaugeChart = echarts.init(gaugeChartRef.value)
-    gaugeChart.setOption({
-      series: [{
-        type: 'gauge', startAngle: 180, endAngle: 0, center: ['50%', '75%'], radius: '95%', min: 0, max: 100,
-        axisLine: { lineStyle: { width: 12, color: [[0.6, '#F87171'], [0.8, '#FBBF24'], [1, '#8A9E58']] } },
-        pointer: { icon: 'path://M12.8,0.7l12,40.1H0.7L12.8,0.7z', length: '50%', width: 6, offsetCenter: [0, '-10%'], itemStyle: { color: 'auto' } },
-        axisTick: { length: 10, lineStyle: { color: 'auto', width: 2 } },
-        splitLine: { length: 15, lineStyle: { color: 'auto', width: 3 } },
-        axisLabel: { color: '#464646', fontSize: 10, distance: -35 },
-        detail: { fontSize: 30, offsetCenter: [0, '-10%'], valueAnimation: true, formatter: '{value}%', color: 'auto', fontWeight: 'bolder' },
-        data: [{ value: 68 }]
-      }]
+    
+    // 渲染完成后初始化图表
+    nextTick(() => {
+      initChart()
     })
-    charts.push(gaugeChart)
-  }
-
-  // 3. 技能权重词云
-  if (wordCloudRef.value) {
-    const wcChart = echarts.init(wordCloudRef.value)
-    wcChart.setOption({
-      tooltip: { show: true },
-      series: [{
-        type: 'wordCloud', shape: 'circle', width: '100%', height: '100%', sizeRange: [12, 35], rotationRange: [-45, 45], rotationStep: 45, gridSize: 6,
-        textStyle: { fontWeight: 'bold', color: () => ['#8A9E58', '#EFDCE2', '#4b5563', '#F7EECD', '#6EE7B7'][Math.floor(Math.random() * 5)] },
-        data: [
-          { name: 'Vue3', value: 100 }, { name: 'JavaScript', value: 85 }, { name: '快速学习', value: 70 },
-          { name: '团队协作', value: 60 }, { name: 'Node.js', value: 55 }, { name: 'TailwindCSS', value: 50 },
-          { name: '问题解决', value: 45 }, { name: 'Git', value: 40 }, { name: 'ECharts', value: 35 }
-        ]
-      }]
-    })
-    charts.push(wcChart)
+  } catch (error) {
+    console.error('解析失败', error)
+  } finally {
+    isParsing.value = false
   }
 }
 
+// --- ECharts 图表逻辑 ---
+const initChart = () => {
+  if (!radarRef.value) return
+  if (chartInstance) chartInstance.dispose()
+
+  chartInstance = echarts.init(radarRef.value)
+  const option = {
+    tooltip: { trigger: 'item' },
+    radar: {
+      indicator: [
+        { name: '前端工程化', max: 100 },
+        { name: '全栈与Node', max: 100 },
+        { name: '架构与性能', max: 100 },
+        { name: '业务沟通', max: 100 },
+        { name: '管理潜质', max: 100 },
+        { name: '创新认知', max: 100 }
+      ],
+      radius: '60%',
+      center: ['50%', '50%'],
+      splitNumber: 4,
+      axisName: { color: '#4b5563', fontSize: 12, fontWeight: 'bold' },
+      splitArea: { areaStyle: { color: ['#f9fafb', '#ffffff'] } },
+      axisLine: { lineStyle: { color: '#e5e7eb' } },
+      splitLine: { lineStyle: { color: '#e5e7eb' } }
+    },
+    series: [{
+      type: 'radar',
+      data: [{
+        value: [85, 78, 65, 80, 55, 90],
+        name: '能力量化得分',
+        itemStyle: { color: '#8A9E58' },
+        areaStyle: { color: 'rgba(138, 158, 88, 0.4)' },
+        lineStyle: { width: 2 }
+      }]
+    }]
+  }
+  chartInstance.setOption(option)
+}
+
+const handleResize = () => {
+  chartInstance?.resize()
+}
+
 onMounted(() => {
-  nextTick(() => {
-    initCharts()
-    window.addEventListener('resize', () => charts.forEach(c => c.resize()))
-  })
+  if (jobStore.hasResumeProfile) {
+    nextTick(() => initChart())
+  }
+  window.addEventListener('resize', handleResize)
+})
+
+watch(() => jobStore.hasResumeProfile, (newVal) => {
+  if (newVal) {
+    nextTick(() => initChart())
+  } else {
+    // 重置表单
+    selectedFile.value = null
+    personalIntro.value = ''
+  }
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', () => charts.forEach(c => c.resize()))
-  charts.forEach(c => c.dispose())
+  window.removeEventListener('resize', handleResize)
+  chartInstance?.dispose()
 })
 </script>
 
 <style scoped>
+/* 拖拽上传组件定制样式 */
+.resume-uploader :deep(.el-upload-dragger) {
+  background-color: #fafafa;
+  border: 1.5px dashed #EFDCE2;
+  border-radius: 16px;
+  padding: 30px;
+  transition: all 0.3s;
+}
+.resume-uploader :deep(.el-upload-dragger:hover) {
+  border-color: #C2D68F;
+  background-color: rgba(194, 214, 143, 0.05);
+}
+.resume-uploader :deep(.el-upload-dragger.is-dragover) {
+  background-color: rgba(194, 214, 143, 0.1);
+  border-color: #8A9E58;
+}
+
+/* 文本域定制样式 */
+.custom-intro-input :deep(.el-textarea__inner) {
+  border-radius: 12px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  transition: all 0.3s;
+}
+.custom-intro-input :deep(.el-textarea__inner:focus) {
+  background-color: #ffffff;
+  border-color: #C2D68F;
+  box-shadow: 0 0 0 2px rgba(194, 214, 143, 0.2);
+}
+
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(194, 214, 143, 0.5); border-radius: 4px; }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(194, 214, 143, 0.8); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
 </style>
