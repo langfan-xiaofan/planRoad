@@ -1,0 +1,61 @@
+/* 引入 Tailwind 的基础层、组件层和工具层 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 针对 Element Plus 弹出层（如 el-drawer）的 z-index 冲突修复 */
+.el-drawer__body {
+  padding: 0 !important;
+}
+
+/* ==============================
+   严格应用P3梦幻配色方案到 Element Plus 全局主题
+   ============================== */
+:root {
+  /* 【核心配色修改】统一为P3暖色系覆盖 Element Plus 的主色调
+      Primary: 深蓝 #84B4C3，作为强调、按钮和激活色
+      secondary 和其它状态将基于 Primary 生成
+  */
+  --el-color-primary: #84B4C3;
+  --el-color-primary-light-3: #a8ccdb; /* 用于浅绿蓝悬浮辅色 #C7E2E0 类似效果，基于 Primary 调整 */
+  --el-color-primary-light-5: #c2dee8;
+  --el-color-primary-light-7: #d9edf4;
+  --el-color-primary-light-9: #f0f8fa; /* 基于 Primary 生成的极淡背景 */
+  --el-color-primary-dark-2: #6a95a3; /* Primary 对应的深色强调 */
+}
+
+/* 覆盖 Element Plus 顶部水平菜单项激活和悬浮样式 */
+.el-header .el-menu-item.is-active {
+  background-color: transparent !important; /* 顶部导航激活项不需要背景颜色 */
+}
+.el-header .el-menu-item:hover {
+  background-color: #C7E2E0 !important; /* 【新增配色应用】悬浮时背景颜色为浅绿蓝 #C7E2E0 */
+  color: #84B4C3 !important; /* 悬浮时文字颜色仍为深蓝 #84B4C3 */
+}
+
+/* 针对 Webkit 浏览器 (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(132, 180, 195, 0.3); /* 使用主题主色调 #84B4C3 的透明版 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(132, 180, 195, 0.6);
+}
+
+/* 如果你的局部区域用了 ElementPlus 的 el-scrollbar，覆盖它的默认透明度让它更清晰 */
+.el-scrollbar__thumb {
+  background-color: rgba(132, 180, 195, 0.4) !important;
+}
+.el-scrollbar__thumb:hover {
+  background-color: rgba(132, 180, 195, 0.7) !important;
+}
