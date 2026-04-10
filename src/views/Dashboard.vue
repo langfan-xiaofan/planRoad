@@ -321,7 +321,7 @@ const initPieChart = () => {
           label: { show: true, fontSize: 14, fontWeight: 'bold' }
         },
         labelLine: { show: false },
-        color: ['#84B4C3', '#C7E2E0', '#EAC0C3', '#FAEDE5', '#d1d5db'], // 严格使用 P3 配色
+        color: ['#84B4C3', '#C7E2E0', '#EAC0C3', '#FAEDE5', '#d1d5db'], 
         data: processedData
       }
     ]

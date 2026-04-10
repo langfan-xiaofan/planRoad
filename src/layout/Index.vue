@@ -128,18 +128,24 @@ const sendMessage = async () => {
   scrollToBottom()
 
   try {
+    //构建表单数据
+    const formData = new FormData()
+    formData.append('message', userText) // 传入当前发送的单条文本消息
+    formData.append('user_id', '0')      // 目前写死为0 后续替换为真实的登录用户ID
+    // formData.append('file', fileObject) // 在这个组件加了上传文件的按钮(后面根据实际情况)
+
     //TODO: 待替换为后端的API地址
     const response = await fetch('http://localhost:8080/api/ai/chat', { 
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        // 'Content-Type': 'application/json',
         // 'Authorization': 'Bearer ' + localStorage.getItem('token') // 有鉴权的话解开这个注释（待改） 
       },
       // 把历史记录一起发给大模型 让它有上下文记忆
-      body: JSON.stringify({ 
-        messages: chatHistory.value.slice(0, -1) // 发送除刚创建的空AI消息外的所有历史记录
+      // 
+      body: formData
       })
-    })
+    
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
