@@ -5,6 +5,7 @@ import (
 	"backend/internal/dao"
 	"backend/internal/model"
 	"context"
+	"encoding/json"
 	"fmt"
 	eino "github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/compose"
@@ -387,6 +388,25 @@ func PurposeChain(input string, ch chan string, client *eino.ChatModel) (string,
 	return content, nil
 }
 
-func Pictrue(client openai.Client) {
-
+func Picture(client *eino.ChatModel, FileInfo string, personIntro string) (model.Position, error) {
+	ctx := context.Background()
+	message := make([]*schema.Message, 0)
+	message = append(message, &schema.Message{
+		Role:    schema.System,
+		Content: ParseUserPicturePrompt,
+	})
+	message = append(message, &schema.Message{
+		Role:    schema.User,
+		Content: personIntro + FileInfo,
+	})
+	res, err := client.Generate(ctx, message)
+	if err != nil {
+		return model.Position{}, err
+	}
+	var position model.Position
+	err = json.Unmarshal([]byte(res.Content), &position)
+	if err != nil {
+		return model.Position{}, err
+	}
+	return position, nil
 }
