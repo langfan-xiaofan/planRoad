@@ -156,16 +156,18 @@ func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Clien
 		return nil, err
 	}
 	var b bytes.Buffer
+	job_position, err := dao.GetJobAndPositon()
 	data := struct {
-		JobPosition string `json:"job_position"`
+		JobPosition []dto.GetPositionByJobRes `json:"job_position"`
 	}{
-		JobPosition: userMessage,
+		JobPosition: job_position,
 	}
 	err = tp1.Execute(&b, data)
 	if err != nil {
 		return nil, err
 	}
 	system := b.String()
+	fmt.Println(system)
 	requestMessage := make([]openai.ChatCompletionMessage, 0)
 	requestMessage = append(requestMessage, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
@@ -192,30 +194,6 @@ func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Clien
 		return nil, err
 	}
 	var content string
-	//for {
-	//	select {
-	//	case <-c.Request.Context().Done():
-	//		return []*schema.Message{
-	//			{
-	//				Role:    schema.User,
-	//				Content: userMessage,
-	//			},
-	//			{
-	//				Role:    schema.Assistant,
-	//				Content: content,
-	//			},
-	//		}, nil
-	//	default:
-	//	}
-	//	mess, err := resp.Recv()
-	//	if err != nil {
-	//		if err == io.EOF {
-	//			break
-	//		}
-	//		return nil, err
-	//	}
-	//	content += mess.Choices[0].Delta.Content
-	//}
 	content = resp.Choices[0].Message.Content
 	return []*schema.Message{
 		{
@@ -227,4 +205,62 @@ func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Clien
 			Content: content,
 		},
 	}, nil
+}
+
+func (s *AgentService) GetPositionDifference(message []*schema.Message, client *eino.ChatModel, c *gin.Context) error {
+	ctx := context.Background()
+	ch := make(chan string, 10)
+	go Stream(c, ch)
+	stream, err := client.Stream(ctx, message)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	for {
+		message, err := stream.Recv()
+		if err != nil {
+			fmt.Println(err)
+			if err == io.EOF {
+				close(ch)
+				break
+			}
+			return err
+		}
+		ch <- message.Content
+		fmt.Print(message.Content)
+	}
+	return nil
+}
+
+func (h *AgentService) ParseResume(c *gin.Context) {
+	var user dto.UserPictureRes
+	var position model.Position
+	user, _ = dao.GetUserPictureByUserId(c.GetUint("id"))
+	position, _ = dao.GetJobPicture("C/C++ 嵌入式系统方向")
+	mp := map[string]interface{}{
+		"UserProfile": fmt.Sprintf("%v", user),
+		"TargetJob":   fmt.Sprintf("%v", position),
+	}
+	ch := make(chan string, 10)
+	go Stream(c, ch)
+	err := agent.GenerateResumeInsight(mp, ch, h.ChatModel)
+	if err != nil {
+		return
+	}
+}
+
+func (h *AgentService) GetResumeRadar(c *gin.Context, userId uint, job string) (dto.ResumeRadarRes, error) {
+	var user dto.UserPictureRes
+	var position model.Position
+	user, _ = dao.GetUserPictureByUserId(userId)
+	position, _ = dao.GetJobPicture(job)
+	mp := map[string]interface{}{
+		"candidate_profile": fmt.Sprintf("%v", user),
+		"job_profile":       fmt.Sprintf("%v", position),
+	}
+	radar, err := agent.GenerateResumeRadar(mp, h.ChatModel)
+	if err != nil {
+		return dto.ResumeRadarRes{}, err
+	}
+	return radar, nil
 }
