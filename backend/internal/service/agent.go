@@ -5,12 +5,9 @@ import (
 	"backend/internal/dto"
 	"backend/internal/model"
 	"backend/pkg/agent"
-
-	// 由于缺少 backend/pkg/agent 的元数据，暂时注释掉该导入
-	// "backend/pkg/agent"
 	"context"
-	"encoding/json"
 	"fmt"
+	eino "github.com/cloudwego/eino-ext/components/model/openai"
 	"io"
 	"os"
 	"path/filepath"
@@ -32,18 +29,35 @@ type AgentService struct {
 	Client          *react.Agent
 	FileParser      *openai.Client
 	ConversationDao *dao.ConversationDao
+	ChatModel       *eino.ChatModel
 }
 
-func NewAgentService(client *react.Agent, fileParser *openai.Client, db *gorm.DB, redis *redis.Client) *AgentService {
+func NewAgentService(client *react.Agent, fileParser *openai.Client, db *gorm.DB, redis *redis.Client, chatModel *eino.ChatModel) *AgentService {
 	return &AgentService{
 		Client:          client,
 		FileParser:      fileParser,
 		ConversationDao: dao.NewConversationDao(db, redis),
+		ChatModel:       chatModel,
 	}
+}
+
+func (s *AgentService) ChatV2(req *dto.ChatRequest, c *gin.Context) error {
+	ch := make(chan string, 10)
+	career := agent.NewCareer(req.UserID, req.Message, s.ConversationDao)
+	ctx := context.Background()
+	go Stream(c, ch)
+	err := career.Graph(ctx, career, s.ChatModel, ch)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *AgentService) Chat(req *dto.ChatRequest, message []*schema.Message, c *gin.Context) (string, error) {
 	var fullcontent string
+	for _, message := range message {
+		fmt.Println(message.Role)
+	}
 	resp, err := s.Client.Stream(context.Background(), message)
 	if err != nil {
 		fmt.Println(err)
@@ -53,17 +67,16 @@ func (s *AgentService) Chat(req *dto.ChatRequest, message []*schema.Message, c *
 	defer func() {
 		// 保存到数据库
 		s.ConversationDao.AddMessageToMysql(&model.Message{
-			ConversationId: req.ConversationId,
-			UserId:         req.UserID,
-			Role:           schema.Assistant,
-			Content:        fullcontent,
-		})
-		message = append(message, &schema.Message{
+			UserId:  req.UserID,
 			Role:    schema.Assistant,
 			Content: fullcontent,
 		})
-		close(messchan)
-
+		// 保存到Redis
+		s.ConversationDao.AddMessageToRedis(req.UserID, &model.Message{
+			UserId:  req.UserID,
+			Role:    schema.Assistant,
+			Content: fullcontent,
+		})
 	}()
 	go Stream(c, messchan)
 	for {
@@ -75,6 +88,7 @@ func (s *AgentService) Chat(req *dto.ChatRequest, message []*schema.Message, c *
 		mess, err := resp.Recv()
 		if err != nil {
 			if err == io.EOF {
+				close(messchan)
 				break
 			} else {
 				return fullcontent, err
@@ -82,28 +96,30 @@ func (s *AgentService) Chat(req *dto.ChatRequest, message []*schema.Message, c *
 		}
 		messchan <- mess.Content
 		fullcontent += mess.Content
-		fmt.Println(mess.Content)
 	}
 	return fullcontent, nil
 }
 
 func Stream(c *gin.Context, mess chan string) {
+	c.Writer.Header().Add("Access-Control-Allow-Origin", "*")
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
-	for {
+	c.Stream(func(w io.Writer) bool {
 		select {
-		case msg := <-mess:
+		case msg, ok := <-mess:
+			if !ok {
+				return false
+			}
 			jsonMsg := struct {
-				Data string `json:"data"`
+				Data string `json:"content"`
 			}{msg}
-			jsonm, _ := json.Marshal(jsonMsg)
-			fmt.Fprintf(c.Writer, "data: %s\n\n", string(jsonm))
-			c.Writer.Flush()
-		case <-c.Done():
-			return
+			c.SSEvent("json", jsonMsg)
+			return true
+		case <-c.Request.Context().Done():
+			return false
 		}
-	}
+	})
 }
 
 func (s *AgentService) UploadFile(file_path []string, client *openai.Client) (map[string]string, error) {
@@ -145,7 +161,7 @@ func (s *AgentService) UploadFile(file_path []string, client *openai.Client) (ma
 	return fileIDs, nil
 }
 
-func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Client, userMessage string, c *gin.Context) (schema.Message, error) {
+func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Client, userMessage string, c *gin.Context) ([]*schema.Message, error) {
 	// var parsedFiles map[string]string = make(map[string]string)
 	requestMessage := make([]openai.ChatCompletionMessage, 0)
 	requestMessage = append(requestMessage, openai.ChatCompletionMessage{
@@ -170,7 +186,7 @@ func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Clien
 	resp, err := client.CreateChatCompletionStream(context.Background(), req)
 	if err != nil {
 		fmt.Println(err)
-		return schema.Message{}, err
+		return nil, err
 	}
 	// for _, choice := range resp.Choices {
 	// 	parsedFiles[choice.Message.Content] = choice.Message.Content
@@ -180,28 +196,39 @@ func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Clien
 	// 	Role:    schema.Assistant,
 	// 	Content: resp.Choices[0].Message.Content,
 	// }, nil
-	messchan := make(chan string)
 	var content string
-	go Stream(c, messchan)
 	for {
 		select {
 		case <-c.Request.Context().Done():
-			return schema.Message{}, nil
+			return []*schema.Message{
+				{
+					Role:    schema.User,
+					Content: userMessage,
+				},
+				{
+					Role:    schema.Assistant,
+					Content: content,
+				},
+			}, nil
 		default:
 		}
 		mess, err := resp.Recv()
 		if err != nil {
 			if err == io.EOF {
 				break
-			} else {
-				return schema.Message{}, err
 			}
+			return nil, err
 		}
 		content += mess.Choices[0].Delta.Content
-		messchan <- mess.Choices[0].Delta.Content
 	}
-	return schema.Message{
-		Role:    schema.Assistant,
-		Content: content,
+	return []*schema.Message{
+		{
+			Role:    schema.User,
+			Content: userMessage,
+		},
+		{
+			Role:    schema.Assistant,
+			Content: content,
+		},
 	}, nil
 }

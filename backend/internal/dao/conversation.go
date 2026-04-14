@@ -4,6 +4,8 @@ import (
 	"backend/internal/model"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/cloudwego/eino/schema"
@@ -23,17 +25,13 @@ func NewConversationDao(db *gorm.DB, redis *redis.Client) *ConversationDao {
 	}
 }
 
-func (d *ConversationDao) AddConversationToMysql(conversation *model.Conversation) error {
-	return d.db.Create(conversation).Error
-}
-
 func (d *ConversationDao) AddMessageToMysql(message *model.Message) error {
-	return d.db.Create(message).Error
+	return d.db.Table("messages").Create(message).Error
 }
 
 func (d *ConversationDao) GetMessagesFromMysql(conversationId uint) ([]*schema.Message, error) {
 	var messages []*model.Message
-	err := d.db.Where("conversation_id = ?", conversationId).Order("created_at desc").Find(&messages).Limit(20).Error
+	err := d.db.Table("messages").Where("user_id = ?", conversationId).Order("created_at asc").Scan(&messages).Limit(20).Error
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +43,7 @@ func (d *ConversationDao) GetMessagesFromMysql(conversationId uint) ([]*schema.M
 			Content: msg.Content,
 		})
 	}
+	fmt.Println("历史对话:", schemaMessages)
 	return schemaMessages, nil
 }
 
@@ -79,6 +78,10 @@ func (d *ConversationDao) GetMessagesFromRedis(conversationId uint) ([]*schema.M
 			Content: msg.Content,
 		})
 	}
+	if len(schemaMessages) == 0 {
+		return make([]*schema.Message, 0), errors.New("no messages found")
+	}
+	fmt.Println("Redis 对话:", schemaMessages)
 	return schemaMessages, nil
 }
 
@@ -94,23 +97,16 @@ func (d *ConversationDao) AddMessageToRedis(conversationId uint, message *model.
 	return nil
 }
 
-func (d *ConversationDao) SummaryMessage(conversationId uint, message *model.Message) error {
+func (d *ConversationDao) SummaryMessage(conversationId uint, message *[]model.Message) error {
 	err := d.Redis.Del(context.Background(), "conversation:"+strconv.Itoa(int(conversationId))).Err()
 	if err != nil {
 		return err
 	}
-	err = d.AddMessageToRedis(conversationId, message)
+	for _, msg := range *message {
+		err = d.AddMessageToRedis(conversationId, &msg)
+	}
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (d *ConversationDao) ExistConversation(conversationId uint) bool {
-	var conversation model.Conversation
-	err := d.db.Where("id = ?", conversationId).First(&conversation).Error
-	if err != nil {
-		return false
-	}
-	return true
 }

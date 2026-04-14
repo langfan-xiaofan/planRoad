@@ -4,6 +4,7 @@ import (
 	"backend/internal/cloudflare"
 	"backend/internal/config"
 	"backend/internal/db"
+	"backend/internal/middleware"
 	"backend/internal/router"
 	"backend/pkg/agent"
 
@@ -12,9 +13,8 @@ import (
 )
 
 func Run() {
-	fileParser := agent.OpenAI()
-	agent := agent.NewAgent()
 	err := godotenv.Load()
+	agent.Init()
 	if err != nil {
 		panic(err)
 	}
@@ -53,8 +53,9 @@ func Run() {
 	db.RedisInit()
 	db.MongoDbInit()
 	r := gin.Default()
+	router.InitRouter(r, agent.Agent, agent.FileParser, db.MysqlDatabase, db.RedisDatabase, agent.ChatModel)
+	r.Use(middleware.CrosMiddleware())
 	cloudflare.CloudFlareInit()
-	router.InitRouter(r, agent)
 	err = r.Run(":8080")
 	if err != nil {
 		return

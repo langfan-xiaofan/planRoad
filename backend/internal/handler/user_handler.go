@@ -22,7 +22,6 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 	res.Success(c, nil)
-	return
 }
 
 func LoginHandler(c *gin.Context) {
@@ -38,7 +37,6 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 	res.Success(c, token)
-	return
 }
 
 func UploadAvatarHandler(c *gin.Context) {
@@ -58,7 +56,6 @@ func UploadAvatarHandler(c *gin.Context) {
 	}
 
 	res.Success(c, avatarRes.AvatarUrl)
-	return
 }
 
 func GetUserPictureHandler(c *gin.Context) {

@@ -3,7 +3,6 @@ package middleware
 import (
 	"backend/pkg/res"
 	"backend/pkg/utils"
-	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
