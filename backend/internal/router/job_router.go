@@ -16,5 +16,6 @@ func initJobRouter(g *gin.Engine) {
 		jobGroup.POST("/getpositionskills", handler.GetPositionSkillsHandler)
 		jobGroup.POST("/creatuserpicture", handler.CreatUserPictureHandler)
 		jobGroup.POST("/getuppath", handler.GetUpPathHandler)
+		jobGroup.POST("/getrelationship", handler.GetJobRelationshipHandler)
 	}
 }
