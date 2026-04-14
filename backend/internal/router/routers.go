@@ -11,4 +11,5 @@ import (
 func InitRouter(g *gin.Engine, client *react.Agent, fileParser *openai.Client, db *gorm.DB, redis *redis.Client) {
 	initUserRouter(g)
 	InitAgentRouter(g, client, fileParser, db, redis)
+	initJobRouter(g)
 }
