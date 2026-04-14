@@ -66,3 +66,18 @@ func CreatUserPictureHandler(c *gin.Context) {
 	res.Success(c, nil)
 	return
 }
+func GetUpPathHandler(c *gin.Context) {
+	var req dto.GetPositionReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		res.Fail(c, 400, nil, err.Error())
+		return
+	}
+	Res, err := dao.GetUpPath(req.Position)
+	if err != nil {
+		res.Fail(c, 400, nil, err.Error())
+		return
+	}
+	res.Success(c, Res)
+	return
+}
