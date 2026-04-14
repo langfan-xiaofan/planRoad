@@ -10,7 +10,7 @@ import (
 
 type MyClaims struct {
 	Id       uint   `json:"id"`
-	RemuseId string `json:"remuseid"`
+	ResumeId string `json:"ResumeId"`
 	jwt.RegisteredClaims
 }
 

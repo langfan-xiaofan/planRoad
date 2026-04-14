@@ -24,7 +24,7 @@ func JwtMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.Set("userid", claims.Id)
+		c.Set("id", claims.Id)
 		c.Next()
 	}
 }

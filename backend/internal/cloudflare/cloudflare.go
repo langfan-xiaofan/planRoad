@@ -14,7 +14,7 @@ import (
 
 var r2Client *s3.Client
 
-func CloudFlareInit() error {
+func CloudFlareInit() {
 	endpoint := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", config.Conf.Cloudflare.AccountId)
 	cfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
 		awsconfig.WithRegion("auto"),
@@ -25,12 +25,11 @@ func CloudFlareInit() error {
 		)),
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	r2Client = s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(endpoint)
 	})
-	return nil
 }
 
 func UploadFile(ctx context.Context, ObjecktKey string, file io.Reader, fileType string) (string, error) {
