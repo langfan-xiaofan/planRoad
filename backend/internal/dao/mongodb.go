@@ -56,6 +56,57 @@ func GetUpPath(position string) (dto.GetUpPathRes, error) { //获取晋升路径
 	}
 	return res, nil
 }
+func GetAllJobPicture() ([]model.Position, error) {
+
+	var res []model.Position
+
+	collection := db.MongoDatabase.Collection("picture2")
+
+	filter := bson.M{}
+
+	cursor, err := collection.Find(context.Background(), filter)
+
+	if err != nil {
+
+		return res, err
+
+	}
+
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+
+		var pos model.Position
+
+		if err := cursor.Decode(&pos); err != nil {
+
+			// 如果某一行解码失败，可以选择跳过或直接返回错误
+
+			return res, err
+
+		}
+
+		res = append(res, pos)
+
+	}
+
+	return res, nil
+
+}
+func GetJobAndPositon() ([]dto.GetPositionByJobRes, error) {
+	var res []dto.GetPositionByJobRes
+	collection := db.MongoDatabase.Collection("position")
+	filter := bson.M{}
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return res, errors.New("获取失败")
+	}
+	cursor.All(context.Background(), &res)
+	if err := cursor.Err(); err != nil {
+		return res, errors.New("获取失败")
+	}
+	return res, nil
+}
 
 func GetJobByPosition(position string) (dto.GetJobByPositionRes, error) { //通过职位获取大类
 	var res dto.GetJobByPositionRes
@@ -82,45 +133,6 @@ func GetJobList() ([]dto.GetJobListRes, error) { //获取所有的Job
 	}
 	return res, nil
 }
-
-//	func CreatUserPicture(req dto.UserPictureReq, id uint) error {
-//		collection := db.MongoDatabase.Collection("picture1")
-//
-//		// 插入数据
-//		insertResult, err := collection.InsertOne(context.Background(), req)
-//		if err != nil {
-//			return errors.New("MongoDB 插入失败")
-//		}
-//
-//		var mongoIDStr string
-//		// 使用 type switch 兼容多种可能的返回类型
-//		switch v := insertResult.InsertedID.(type) {
-//		case primitive.ObjectID:
-//			mongoIDStr = v.Hex()
-//		case *primitive.ObjectID:
-//			mongoIDStr = v.Hex()
-//		default:
-//			// 如果断言都失败了，说明驱动返回了奇怪的类型，用格式化拿到它
-//			mongoIDStr = fmt.Sprintf("%v", v)
-//			// 兜底处理：去掉可能存在的包装字符
-//			mongoIDStr = strings.TrimPrefix(mongoIDStr, "ObjectID(\"")
-//			mongoIDStr = strings.TrimSuffix(mongoIDStr, "\")")
-//		}
-//
-//		// 严谨校验：如果拿到的还是全0或空，直接拦截
-//		if mongoIDStr == "" || mongoIDStr == "000000000000000000000000" {
-//			return errors.New("生成的 MongoDB ID 无效")
-//		}
-//
-//		// 更新到 MySQL
-//		err = UpdateResumeId(mongoIDStr, id)
-//		if err != nil {
-//			return fmt.Errorf("MySQL 更新失败: %v", err)
-//		}
-//
-//		fmt.Println("成功创建画像并关联 MySQL，ID:", mongoIDStr)
-//		return nil
-//	}
 func CreatUserPicture(req dto.UserPictureReq) error {
 	collection := db.MongoDatabase.Collection("picture1")
 	_, err := collection.InsertOne(context.Background(), req)
