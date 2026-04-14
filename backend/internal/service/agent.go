@@ -123,21 +123,6 @@ func Stream(c *gin.Context, mess chan string) {
 }
 
 func (s *AgentService) UploadFile(file_path []string, client *openai.Client) (map[string]string, error) {
-	// uploadReq := openai.FileRequest{
-	// 	FilePath: file_path[0],
-	// 	Purpose:  "file-extract",
-	// 	FileName: filepath.Base(file_path[0]),
-	// }
-	// file,err:=client.CreateFile(context.Background(),uploadReq)
-	// if err!= nil{
-	// 	fmt.Println(err)
-	// 	return err
-	// }
-	// err=os.Remove(file_path[0])
-	// if err!= nil{
-	// 	fmt.Println(err)
-	// 	return err
-	// }
 	var fileIDs map[string]string = make(map[string]string)
 	for _, path := range file_path {
 		uploadReq := openai.FileRequest{

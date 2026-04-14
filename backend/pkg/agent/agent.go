@@ -78,7 +78,7 @@ func CreateFileParseAgent() *eino.ChatModel {
 	}
 	agentConfig := eino.ChatModelConfig{
 		APIKey:  os.Getenv("API_KEY"),
-		Model:   os.Getenv("Qwen_plusModel"),
+		Model:   os.Getenv("Qwen_longModel"),
 		BaseURL: os.Getenv("BaseURL"),
 	}
 	client, err := eino.NewChatModel(context.Background(), &agentConfig)
@@ -385,4 +385,8 @@ func PurposeChain(input string, ch chan string, client *eino.ChatModel) (string,
 		ch <- mess.Content
 	}
 	return content, nil
+}
+
+func Pictrue(client openai.Client) {
+
 }

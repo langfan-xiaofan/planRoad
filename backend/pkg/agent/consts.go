@@ -4,7 +4,7 @@ const (
 	Qwen_Plus = "qwen-plus"
 	Qwen_Long = "qwen-long"
 
-	FilePrompt   = "请解析文件内容"
+	FilePrompt   = "将文件的信息提取出来,不要多余文字"
 	IntentPrompt = `你是职业规划助手的意图分类器，判断要非常准确,只需要返回一下几个字段:
 career_plan:职业规划、未来发展路径、技能学习计划
 promotion:当前职位如何晋升、升职加薪建议
@@ -19,7 +19,7 @@ general_chat:闲聊、情绪支持、通用问题
 职业数据库（共100个岗位）：{{job_database_json}}
 
 # Task
-请根据用户信息，在职业数据库中筛选出最匹配的 3 个岗位。
+请根据用户信息，在职业数据库中筛选出最匹配的 1 个岗位。
 
 # Constraints
 1. 必须从提供的数据库中筛选，不能编造岗位。
@@ -28,14 +28,9 @@ general_chat:闲聊、情绪支持、通用问题
 
 # Output Format
 请严格按照以下格式输出：
-
-### 🎯 推荐岗位 1：[岗位名称]
-- **匹配度：** [XX]%
-- **推荐理由：** [结合用户背景，用通俗的语言解释为什么适合]
-- **能力差距：** [用户目前欠缺的1-2个核心技能]
-
-### 🎯 推荐岗位 2：[岗位名称]
-...`
+{
+ "job":"职业数据库里面的job字段",
+ "position":"职业数据库里面的position字段"`
 	SwitchPrompt = `你是一个有着对转行有着丰富经验的指导师,你的语气温柔、鼓励,请你跟据以下的做出回答{{}},{{}}`
 	ChatPrompt   = `你是一个专业的职业规划师,你讲根据以下的内容进行闲聊、情绪支持、通用问题{{}},内容精炼、简洁`
 	ComparePrompt
@@ -54,7 +49,7 @@ general_chat:闲聊、情绪支持、通用问题
    - **行动建议**：必须具体！不要说“多学习”，要说“参与1-2个具有实际复杂业务场景的项目”，并给出具体的项目例子（如“低代码平台”、“大屏可视化”）。
 
 # Input Data
-用户画像：{{user_profile}}
+用户信息：{{user_profile}}
 目标岗位标准：{{target_job}}
 
 # Output Format
@@ -106,10 +101,10 @@ general_chat:闲聊、情绪支持、通用问题
   "position": "Vue技术栈方向",
   "skills": ["Vue3", "TypeScript", "Vite", "Git"],
   "certifications": ["CET-6", "计算机二级"],
-  "innovation": "具备一定创新意识，曾优化构建流程",
-  "learning_ability": "学习能力强，自学了React和Next.js",
-  "stress_tolerance": "抗压能力强，有大型活动保障经验",
-  "communication": "沟通顺畅，曾担任学生会干部",
+  "innovation": "70具备一定创新意识，曾优化构建流程",
+  "learning_ability": "90学习能力强，自学了React和Next.js",
+  "stress_tolerance": "90抗压能力强，有大型活动保障经验",
+  "communication": "90沟通顺畅，曾担任学生会干部",
   "experience": "在字节跳动实习期间，负责内部平台重构，使用Vue3提升页面加载速度30%。",
   "publicbase": ["良好的英语读写能力", "熟练使用Office办公软件"]
 }`

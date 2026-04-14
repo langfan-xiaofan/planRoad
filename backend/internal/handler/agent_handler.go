@@ -4,7 +4,6 @@ import (
 	"backend/internal/dto"
 	"backend/internal/model"
 	"backend/internal/service"
-	"backend/pkg/agent"
 	"fmt"
 	eino "github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/flow/agent/react"
@@ -171,7 +170,7 @@ func (h *AgentHandler) Parse(c *gin.Context) {
 		}
 		filePaths = append(filePaths, fmt.Sprintf("./uploads/%s", f.Filename))
 	}
-	userMessage := form.Value["message"][0]
+	userMessage := form.Value["personalIntro"][0]
 	if userMessage == "" {
 		userMessage = "请分析这个文件"
 	}
@@ -190,39 +189,8 @@ func (h *AgentHandler) Parse(c *gin.Context) {
 	c.JSON(200, gin.H{"parsedFiles": parsedFiles})
 }
 
-func (h *AgentHandler) Graph(c *gin.Context) {
-	type GraphRequest struct {
-		Message string `json:"message"`
-	}
-	var req GraphRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		fmt.Println(err)
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	output := make(chan string, 10)
-	content, err := agent.PurposeChain(req.Message, output, h.AgentService.ChatModel)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	fmt.Println("content:", content)
-	result := make(chan string, 10)
-	go service.Stream(c, result)
-	Career := agent.NewCareer(0, req.Message, h.AgentService.ConversationDao)
-	err = Career.InitGraph(content, result, req.Message, c, *h.AgentService.ConversationDao, h.AgentService.ChatModel)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-}
-
 func (h *AgentHandler) ChatV2(c *gin.Context) {
 	var req dto.ChatRequest
-	//if err := c.ShouldBindJSON(&req); err != nil {
-	//	c.JSON(400, gin.H{"error": err.Error()})
-	//	return
-	//}
 	form, err := c.MultipartForm()
 	req.UserID = uint(c.GetInt("user_id"))
 	req.Message = form.Value["message"][0]
