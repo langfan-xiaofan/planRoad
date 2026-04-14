@@ -81,3 +81,20 @@ func GetUpPathHandler(c *gin.Context) {
 	res.Success(c, Res)
 	return
 }
+
+func GetJobRelationshipHandler(c *gin.Context) {
+	var req dto.GetPositionReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		res.Fail(c, 400, nil, err.Error())
+		return
+	}
+	Res, err := dao.GetJobRelationship(req)
+
+	if err != nil {
+		res.Fail(c, 400, nil, err.Error())
+		return
+	}
+	res.Success(c, Res)
+	return
+}

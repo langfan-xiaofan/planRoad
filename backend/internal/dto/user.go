@@ -35,7 +35,7 @@ type UserPictureReq struct {
 	StressTolerance string   `bson:"stress_tolerance" json:"stress_tolerance"` //抗压能力
 	Communication   string   `bson:"communication" json:"communication"`       //沟通能力
 	Experience      string   `bson:"experience" json:"experience"`             //项目经验
-	PublicBase      []string `bson:"publicbase" json:"publicBase"`             //基础
+	PublicBase      []string `bson:"publicBase" json:"publicBase"`             //基础
 }
 
 type UserPictureRes struct {

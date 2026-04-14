@@ -153,3 +153,15 @@ func GetUserPictureByUserId(userid uint) (dto.UserPictureRes, error) {
 	return res, nil
 
 }
+
+func GetJobRelationship(req dto.GetPositionReq) (model.JobRelationship, error) {
+	var res model.JobRelationship
+	var err error
+	collection := db.MongoDatabase.Collection("relationship")
+	filter := bson.M{"origin_position": req.Position}
+	err = collection.FindOne(context.Background(), filter).Decode(&res)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
