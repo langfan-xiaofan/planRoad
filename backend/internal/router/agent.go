@@ -17,8 +17,11 @@ func InitAgentRouter(r *gin.Engine, client *react.Agent, fileParser *openai.Clie
 	agent := r.Group("/api")
 	r.POST("agent/chatV2", agentHandler.ChatV2)
 	agent.POST("/resume/parse", agentHandler.Parse)
+	agent.POST("/difference", agentHandler.GetPositionDeference)
 	agent.Use(middleware.JwtMiddleware())
 	{
+		agent.GET("insight", agentHandler.GenerateResumeInsight)
 		agent.POST("/chat", agentHandler.Chat)
+		agent.POST("/resume/radar", agentHandler.GetResumeRadar)
 	}
 }

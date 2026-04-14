@@ -85,25 +85,25 @@ func (d *ConversationDao) GetMessagesFromRedis(conversationId uint) ([]*schema.M
 	return schemaMessages, nil
 }
 
-func (d *ConversationDao) AddMessageToRedis(conversationId uint, message *model.Message) error {
+func (d *ConversationDao) AddMessageToRedis(userId uint, message *model.Message) error {
 	jsonStr, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
-	err = d.Redis.RPush(context.Background(), "conversation:"+strconv.Itoa(int(conversationId)), string(jsonStr)).Err()
+	err = d.Redis.RPush(context.Background(), "conversation:"+strconv.Itoa(int(userId)), string(jsonStr)).Err()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *ConversationDao) SummaryMessage(conversationId uint, message *[]model.Message) error {
-	err := d.Redis.Del(context.Background(), "conversation:"+strconv.Itoa(int(conversationId))).Err()
+func (d *ConversationDao) SummaryMessage(userId uint, message *[]model.Message) error {
+	err := d.Redis.Del(context.Background(), "conversation:"+strconv.Itoa(int(userId))).Err()
 	if err != nil {
 		return err
 	}
 	for _, msg := range *message {
-		err = d.AddMessageToRedis(conversationId, &msg)
+		err = d.AddMessageToRedis(userId, &msg)
 	}
 	if err != nil {
 		return err

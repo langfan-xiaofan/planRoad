@@ -3,11 +3,13 @@ package agent
 import "C"
 import (
 	"backend/internal/dao"
+	"backend/internal/dto"
 	"backend/internal/model"
 	"context"
 	"encoding/json"
 	"fmt"
 	eino "github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/flow/agent/react"
 	"github.com/cloudwego/eino/schema"
@@ -156,10 +158,29 @@ func (c *Career) SaveMessage(ctx context.Context, career *Career) (*Career, erro
 }
 
 func (c *Career) UpdatePersona(ctx context.Context, career *Career) (*Career, error) {
+
 	return career, nil
 }
 
 func (c *Career) SummaryMessage(ctx context.Context, career *Career) (*Career, error) {
+	career.Messages = append(career.Messages, &schema.Message{
+		Role:    schema.User,
+		Content: "总结一下对话",
+	})
+	generate, err := ChatModel.Generate(ctx, career.Messages)
+	if err != nil {
+		return nil, err
+	}
+	err = c.Dao.SummaryMessage(c.UserId, &[]model.Message{
+		{
+			Role:    schema.User,
+			UserId:  career.UserId,
+			Content: generate.Content,
+		},
+	})
+	if err != nil {
+		return career, err
+	}
 	return career, nil
 }
 
@@ -340,6 +361,20 @@ func (c *Career) Graph(ctx context.Context, career *Career, client *eino.ChatMod
 		Role:    schema.Assistant,
 		Content: content,
 	})
+	career.Messages = append(career.Messages, &schema.Message{
+		Role:    schema.User,
+		Content: career.Input,
+	})
+	career.Messages = append(career.Messages, &schema.Message{
+		Role:    schema.Assistant,
+		Content: content,
+	})
+	if len(career.Messages) > 20 {
+		_, err := career.SummaryMessage(ctx, c)
+		if err != nil {
+			return err
+		}
+	}
 	if err != nil {
 		return err
 	}
@@ -388,25 +423,50 @@ func PurposeChain(input string, ch chan string, client *eino.ChatModel) (string,
 	return content, nil
 }
 
-func Picture(client *eino.ChatModel, FileInfo string, personIntro string) (model.Position, error) {
-	ctx := context.Background()
-	message := make([]*schema.Message, 0)
-	message = append(message, &schema.Message{
-		Role:    schema.System,
-		Content: ParseUserPicturePrompt,
-	})
-	message = append(message, &schema.Message{
-		Role:    schema.User,
-		Content: personIntro + FileInfo,
-	})
-	res, err := client.Generate(ctx, message)
+func GenerateResumeInsight(data map[string]interface{}, ch chan string, client *eino.ChatModel) error {
+	template := prompt.FromMessages(schema.GoTemplate,
+		schema.SystemMessage(ParsePrompt))
+
+	messages, err := template.Format(context.Background(), data)
 	if err != nil {
-		return model.Position{}, err
+		return err
 	}
-	var position model.Position
-	err = json.Unmarshal([]byte(res.Content), &position)
+	stream, err := client.Stream(context.Background(), messages)
 	if err != nil {
-		return model.Position{}, err
+		return err
 	}
-	return position, nil
+	for {
+		mess, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				close(ch)
+				break
+			}
+			return err
+		}
+		ch <- mess.Content
+	}
+	return nil
+}
+
+func GenerateReportInsight(data map[string]interface{}, ch chan string, client *eino.ChatModel) error {
+	return nil
+}
+
+func GenerateResumeRadar(data map[string]interface{}, client *eino.ChatModel) (dto.ResumeRadarRes, error) {
+	var radar dto.ResumeRadarRes
+	template := prompt.FromMessages(schema.GoTemplate, schema.SystemMessage(ResumeRadarPrompt))
+	messages, err := template.Format(context.Background(), data)
+	if err != nil {
+		return dto.ResumeRadarRes{}, err
+	}
+	result, err := client.Generate(context.Background(), messages)
+	if err != nil {
+		return dto.ResumeRadarRes{}, err
+	}
+	err = json.Unmarshal([]byte(result.Content), &radar)
+	if err != nil {
+		return dto.ResumeRadarRes{}, err
+	}
+	return radar, nil
 }

@@ -32,7 +32,7 @@ type UserPictureReq struct {
 	Certifications  []string `bson:"certifications" json:"certifications"`     //证书
 	Innovation      string   `bson:"innovation" json:"innovation"`             //创新能力
 	LearningAbility string   `bson:"learning_ability" json:"learning_ability"` //学习能力
-	StressTolerance string   `bson:"stress_tolerance" json:"stressTolerance"`  //抗压能力
+	StressTolerance string   `bson:"stress_tolerance" json:"stress_tolerance"` //抗压能力
 	Communication   string   `bson:"communication" json:"communication"`       //沟通能力
 	Experience      string   `bson:"experience" json:"experience"`             //项目经验
 	PublicBase      []string `bson:"publicbase" json:"publicBase"`             //基础

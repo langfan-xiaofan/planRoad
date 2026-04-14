@@ -13,3 +13,23 @@ type Position struct {
 	ExperienceReq   string   `bson:"experience_req"`
 	PublicBase      []string `bson:"publicbase"`
 }
+
+type UserPosition struct {
+	UserId   string `json:"user_id"`
+	Position string `json:"position"`
+}
+
+type DevelopmentNode struct {
+	UserId       uint   `gorm:"user_id"`
+	Position     string `gorm:"position"`
+	NextPosition string `gorm:"next_position"`
+	Plan         string `gorm:"plan"`
+}
+
+type Plan struct {
+	UserId        uint   `gorm:"user_id"`
+	Position      string `gorm:"position"`
+	KnowledgeName string `gorm:"knowledge_name"`
+	Time          string `gorm:"time"`
+	Skills        string `gorm:"skills"`
+}

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/internal/dao"
 	"backend/internal/dto"
 	"backend/internal/model"
 	"backend/internal/service"
@@ -188,17 +189,16 @@ func (h *AgentHandler) Parse(c *gin.Context) {
 		return
 	}
 	fmt.Println("分析出来的画像", parsedFiles[1].Content)
-	var position dto.UserPictureRes
-	//position, err = agent.Picture(agent.ChatModel, parsedFiles[1].Content, userMessage)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	c.JSON(500, gin.H{"error": err.Error()})
-	//	return
-	//}
+	var position dto.UserPictureReq
 	err = json.Unmarshal([]byte(parsedFiles[1].Content), &position)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	position.UserId = c.GetUint("id")
+	err = dao.CreatUserPicture(position)
+	if err != nil {
 		return
 	}
 	c.JSON(200, gin.H{"parsedFiles": position})
@@ -220,4 +220,54 @@ func (h *AgentHandler) ChatV2(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"success": true})
+}
+
+func (h *AgentHandler) GetPositionDeference(c *gin.Context) {
+	var df dto.GetPositionDifferenceRequest
+	if err := c.ShouldBindJSON(&df); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	messages := make([]*schema.Message, 0)
+	messages = append(messages, &schema.Message{
+		Role:    schema.System,
+		Content: "你是一个专业的职位对比分析师，你将根据两个职业画像分析从第一个职业转到第二个职业所需要学习的技能，以及一些建议，要求精简",
+	})
+	var po1, po2 model.Position
+	po1, err := dao.GetJobPicture(df.From)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	po2, err = dao.GetJobPicture(df.To)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	messages = append(messages, &schema.Message{
+		Role:    schema.User,
+		Content: "职位一:" + fmt.Sprintf("%v", po1) + ",职位二:" + fmt.Sprintf("%v", po2) + "," + fmt.Sprintf("%v", po1),
+	})
+	err = h.AgentService.GetPositionDifference(messages, h.AgentService.ChatModel, c)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"success": true})
+}
+func (h *AgentHandler) GenerateResumeInsight(c *gin.Context) {
+	h.AgentService.ParseResume(c)
+}
+
+func (h *AgentHandler) GetResumeRadar(c *gin.Context) {
+	var req dto.ResumeRadarReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	radar, err := h.AgentService.GetResumeRadar(c, req.UserID, req.Job)
+	if err != nil {
+		return
+	}
+	c.JSON(200, gin.H{"success": true, "data": radar})
 }
