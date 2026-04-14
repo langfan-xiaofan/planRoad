@@ -18,6 +18,7 @@ func MysqlInit() error {
 	}
 	err = MysqlDatabase.AutoMigrate(
 		&model.User{},
+		&model.Message{},
 	)
 	if err != nil {
 		return err
