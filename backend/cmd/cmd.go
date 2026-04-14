@@ -56,6 +56,7 @@ func Run() {
 	db.Neo4jInit()
 	db.MysqlInit()
 	db.RedisInit()
+	db.MongoDbInit()
 	r := gin.Default()
 	cloudflare.CloudFlareInit()
 	router.InitRouter(r, agent)

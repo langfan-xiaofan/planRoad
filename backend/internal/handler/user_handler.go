@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"backend/internal/dao"
 	"backend/internal/dto"
 	"backend/internal/service"
 	"backend/pkg/res"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,5 +58,17 @@ func UploadAvatarHandler(c *gin.Context) {
 	}
 
 	res.Success(c, avatarRes.AvatarUrl)
+	return
+}
+
+func GetUserPictureHandler(c *gin.Context) {
+	id := c.GetUint("id")
+	//Res, err := dao.GetUserPicture(id)
+	Res, err := dao.GetUserPictureByUserId(id)
+	if err != nil {
+		res.Fail(c, 404, nil, err.Error())
+		return
+	}
+	res.Success(c, Res)
 	return
 }
