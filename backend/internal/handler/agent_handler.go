@@ -4,6 +4,7 @@ import (
 	"backend/internal/dto"
 	"backend/internal/model"
 	"backend/internal/service"
+	"encoding/json"
 	"fmt"
 	eino "github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/flow/agent/react"
@@ -186,7 +187,21 @@ func (h *AgentHandler) Parse(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, gin.H{"parsedFiles": parsedFiles})
+	fmt.Println("分析出来的画像", parsedFiles[1].Content)
+	var position dto.UserPictureRes
+	//position, err = agent.Picture(agent.ChatModel, parsedFiles[1].Content, userMessage)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	c.JSON(500, gin.H{"error": err.Error()})
+	//	return
+	//}
+	err = json.Unmarshal([]byte(parsedFiles[1].Content), &position)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"parsedFiles": position})
 }
 
 func (h *AgentHandler) ChatV2(c *gin.Context) {

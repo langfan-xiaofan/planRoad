@@ -5,9 +5,11 @@ import (
 	"backend/internal/dto"
 	"backend/internal/model"
 	"backend/pkg/agent"
+	"bytes"
 	"context"
 	"fmt"
 	eino "github.com/cloudwego/eino-ext/components/model/openai"
+	"html/template"
 	"io"
 	"os"
 	"path/filepath"
@@ -148,10 +150,26 @@ func (s *AgentService) UploadFile(file_path []string, client *openai.Client) (ma
 
 func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Client, userMessage string, c *gin.Context) ([]*schema.Message, error) {
 	// var parsedFiles map[string]string = make(map[string]string)
+	tp1, err := template.New("prompt").Parse(agent.ParseUserPicturePrompt)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	var b bytes.Buffer
+	data := struct {
+		JobPosition string `json:"job_position"`
+	}{
+		JobPosition: userMessage,
+	}
+	err = tp1.Execute(&b, data)
+	if err != nil {
+		return nil, err
+	}
+	system := b.String()
 	requestMessage := make([]openai.ChatCompletionMessage, 0)
 	requestMessage = append(requestMessage, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
-		Content: agent.FilePrompt,
+		Content: system,
 	})
 	for _, fileID := range fileIDs {
 		requestMessage = append(requestMessage, openai.ChatCompletionMessage{
@@ -166,46 +184,39 @@ func (s *AgentService) ParseFile(fileIDs map[string]string, client *openai.Clien
 	req := openai.ChatCompletionRequest{
 		Model:    os.Getenv("Qwen_longModel"),
 		Messages: requestMessage,
-		Stream:   true,
+		Stream:   false,
 	}
-	resp, err := client.CreateChatCompletionStream(context.Background(), req)
+	resp, err := client.CreateChatCompletion(context.Background(), req)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
-	// for _, choice := range resp.Choices {
-	// 	parsedFiles[choice.Message.Content] = choice.Message.Content
-	// }
-	// fmt.Println(resp.Choices[0].Message.Content)
-	// return schema.Message{
-	// 	Role:    schema.Assistant,
-	// 	Content: resp.Choices[0].Message.Content,
-	// }, nil
 	var content string
-	for {
-		select {
-		case <-c.Request.Context().Done():
-			return []*schema.Message{
-				{
-					Role:    schema.User,
-					Content: userMessage,
-				},
-				{
-					Role:    schema.Assistant,
-					Content: content,
-				},
-			}, nil
-		default:
-		}
-		mess, err := resp.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-		content += mess.Choices[0].Delta.Content
-	}
+	//for {
+	//	select {
+	//	case <-c.Request.Context().Done():
+	//		return []*schema.Message{
+	//			{
+	//				Role:    schema.User,
+	//				Content: userMessage,
+	//			},
+	//			{
+	//				Role:    schema.Assistant,
+	//				Content: content,
+	//			},
+	//		}, nil
+	//	default:
+	//	}
+	//	mess, err := resp.Recv()
+	//	if err != nil {
+	//		if err == io.EOF {
+	//			break
+	//		}
+	//		return nil, err
+	//	}
+	//	content += mess.Choices[0].Delta.Content
+	//}
+	content = resp.Choices[0].Message.Content
 	return []*schema.Message{
 		{
 			Role:    schema.User,
