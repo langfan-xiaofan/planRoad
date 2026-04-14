@@ -2,7 +2,6 @@ package db
 
 import (
 	"backend/internal/config"
-	"backend/internal/model"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -10,18 +9,10 @@ import (
 
 var MysqlDatabase *gorm.DB
 
-func MysqlInit() error {
+func MysqlInit() {
 	var err error
 	MysqlDatabase, err = gorm.Open(mysql.Open(config.Conf.Dsn), &gorm.Config{})
 	if err != nil {
-		return err
+		panic(err)
 	}
-	err = MysqlDatabase.AutoMigrate(
-		&model.User{},
-		&model.Message{},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
 }

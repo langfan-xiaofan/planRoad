@@ -17,6 +17,6 @@ func initUserRouter(g *gin.Engine) {
 	authGroup.Use(middleware.JwtMiddleware())
 	{
 		authGroup.POST("/avatar", handler.UploadAvatarHandler)
-
+		authGroup.GET("/getuserpicture", handler.GetUserPictureHandler)
 	}
 }

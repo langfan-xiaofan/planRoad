@@ -12,4 +12,5 @@ import (
 func InitRouter(g *gin.Engine, client *react.Agent, fileParser *openai.Client, db *gorm.DB, redis *redis.Client, chatModel *eino.ChatModel) {
 	initUserRouter(g)
 	InitAgentRouter(g, client, fileParser, db, redis, chatModel)
+	initJobRouter(g)
 }
