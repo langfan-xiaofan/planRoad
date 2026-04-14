@@ -6,19 +6,14 @@ import (
 	"backend/internal/db"
 	"backend/internal/router"
 	"backend/pkg/agent"
-	"context"
-	"fmt"
-	"os"
 
-	eino "github.com/cloudwego/eino-ext/components/model/openai"
-	"github.com/cloudwego/eino/compose"
-	"github.com/cloudwego/eino/flow/agent/react"
-	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func Run() {
+	fileParser := agent.OpenAI()
+	agent := agent.NewAgent()
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
