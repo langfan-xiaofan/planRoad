@@ -7,6 +7,7 @@ import (
 	"backend/internal/service"
 	"encoding/json"
 	"fmt"
+
 	eino "github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/flow/agent/react"
 	"github.com/cloudwego/eino/schema"
@@ -41,7 +42,7 @@ func (h *AgentHandler) Chat(c *gin.Context) {
 	}
 	fmt.Println(req)
 	// 处理文件上传
-	file := form.File["file"]
+	file := form.File["resume"]
 	filePaths := make([]string, 0)
 	for _, f := range file {
 		if err := c.SaveUploadedFile(f, fmt.Sprintf("./uploads/%s", f.Filename)); err != nil {
@@ -162,6 +163,7 @@ func (h *AgentHandler) Parse(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Println("form", form)
 	file := form.File["file"]
 	filePaths := make([]string, 0)
 	for _, f := range file {
@@ -172,9 +174,11 @@ func (h *AgentHandler) Parse(c *gin.Context) {
 		}
 		filePaths = append(filePaths, fmt.Sprintf("./uploads/%s", f.Filename))
 	}
-	userMessage := form.Value["personalIntro"][0]
-	if userMessage == "" {
-		userMessage = "请分析这个文件"
+	var userMessage string
+	if len(form.Value["personalIntro"]) > 0 {
+		userMessage = form.Value["personalIntro"][0]
+	} else {
+		userMessage = "情分析这个文件"
 	}
 	fileIDs, err := h.AgentService.UploadFile(filePaths, h.AgentService.FileParser)
 	if err != nil {

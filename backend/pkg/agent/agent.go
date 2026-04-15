@@ -8,6 +8,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+
 	eino "github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/compose"
@@ -15,8 +18,6 @@ import (
 	"github.com/cloudwego/eino/schema"
 	"github.com/joho/godotenv"
 	"github.com/sashabaranov/go-openai"
-	"io"
-	"os"
 )
 
 type Career struct {
@@ -126,6 +127,7 @@ func (c *Career) LoadContext(ctx context.Context, message []*schema.Message) ([]
 	}
 	message = append(message, mess...)
 	message = append(message, &schema.Message{Role: schema.User, Content: c.Input})
+	fmt.Println(message)
 	return message, nil
 }
 
@@ -158,7 +160,31 @@ func (c *Career) SaveMessage(ctx context.Context, career *Career) (*Career, erro
 }
 
 func (c *Career) UpdatePersona(ctx context.Context, career *Career) (*Career, error) {
-
+	picture, err := dao.GetUserPictureByUserId(c.UserId)
+	if err != nil {
+		return nil, err
+	}
+	message := make([]*schema.Message, 0)
+	message = append(message, &schema.Message{
+		Role:    schema.System,
+		Content: ParseUserPicturePrompt,
+	})
+	message = append(message, c.Messages...)
+	message = append(message, &schema.Message{
+		Role:    schema.User,
+		Content: "旧的用户画像如下：" + fmt.Sprint(picture) + "请你从上下文对话给出新的用户画像，如果没有需要更新的东西就不用更新，直接返回原本的用户画像",
+	})
+	res, err := ChatModel.Generate(ctx, message)
+	if err != nil {
+		return nil, err
+	}
+	var UserPicture dto.UserPictureReq
+	err = json.Unmarshal([]byte(res.Content), &UserPicture)
+	UserPicture.UserId = career.UserId
+	err = dao.CreatUserPicture(UserPicture)
+	if err != nil {
+		return nil, err
+	}
 	return career, nil
 }
 
@@ -209,7 +235,7 @@ func (c *Career) Graph(ctx context.Context, career *Career, client *eino.ChatMod
 		return []*schema.Message{
 			&schema.Message{
 				Role:    schema.System,
-				Content: PlanPrompt,
+				Content: PlanNodePrompt,
 			},
 		}, nil
 	})

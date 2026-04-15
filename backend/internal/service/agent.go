@@ -8,11 +8,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	eino "github.com/cloudwego/eino-ext/components/model/openai"
 	"html/template"
 	"io"
 	"os"
 	"path/filepath"
+
+	eino "github.com/cloudwego/eino-ext/components/model/openai"
 
 	"github.com/cloudwego/eino/flow/agent/react"
 	"github.com/cloudwego/eino/schema"
@@ -103,7 +104,7 @@ func (s *AgentService) Chat(req *dto.ChatRequest, message []*schema.Message, c *
 }
 
 func Stream(c *gin.Context, mess chan string) {
-	c.Writer.Header().Add("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -241,6 +242,7 @@ func (h *AgentService) ParseResume(c *gin.Context) {
 		"UserProfile": fmt.Sprintf("%v", user),
 		"TargetJob":   fmt.Sprintf("%v", position),
 	}
+	fmt.Println(mp)
 	ch := make(chan string, 10)
 	go Stream(c, ch)
 	err := agent.GenerateResumeInsight(mp, ch, h.ChatModel)

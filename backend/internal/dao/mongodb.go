@@ -135,13 +135,24 @@ func GetJobList() ([]dto.GetJobListRes, error) { //获取所有的Job
 }
 func CreatUserPicture(req dto.UserPictureReq) error {
 	collection := db.MongoDatabase.Collection("picture1")
-	_, err := collection.InsertOne(context.Background(), req)
+	filter := bson.M{"user_id": req.UserId}
+
+	// 1. 先尝试更新
+	update := bson.M{"$set": req}
+	result, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
-		return errors.New("MongoDB 插入失败")
+		return err
 	}
+	// 2. 如果 MatchedCount 为 0，说明数据库里没这条数据，那就执行插入
+	if result.MatchedCount == 0 {
+		_, err := collection.InsertOne(context.Background(), req)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
-
 func GetUserPictureByUserId(userid uint) (dto.UserPictureRes, error) {
 	var res dto.UserPictureRes
 	collection := db.MongoDatabase.Collection("picture1")
@@ -165,3 +176,24 @@ func GetJobRelationship(req dto.GetPositionReq) (model.JobRelationship, error) {
 	}
 	return res, nil
 }
+
+//func GetPositionList() ([]dto.GetPositionReq, error) {
+//	var res []model.Position
+//	collection := db.MongoDatabase.Collection("position")
+//	filter := bson.M{}
+//	cursor, err := collection.Find(context.Background(), filter)
+//	if err != nil {
+//		return res, err
+//	}
+//	defer cursor.Close(context.Background())
+//	for cursor.Next(context.Background()) {
+//		var pos model.Position
+//		if err := cursor.Decode(&pos); err != nil {
+//			return res, err
+//		}
+//	}
+//	if err := cursor.Err(); err != nil {
+//		return res, err
+//	}
+//	return res, nil
+//}

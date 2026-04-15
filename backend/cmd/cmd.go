@@ -26,8 +26,8 @@ func Run() {
 	db.RedisInit()
 	db.MongoDbInit()
 	r := gin.Default()
-	router.InitRouter(r, agent.Agent, agent.FileParser, db.MysqlDatabase, db.RedisDatabase, agent.ChatModel)
 	r.Use(middleware.CrosMiddleware())
+	router.InitRouter(r, agent.Agent, agent.FileParser, db.MysqlDatabase, db.RedisDatabase, agent.ChatModel)
 	cloudflare.CloudFlareInit()
 	err = r.Run(":8080")
 	if err != nil {

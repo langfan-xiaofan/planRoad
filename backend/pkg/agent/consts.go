@@ -11,7 +11,8 @@ promotion:当前职位如何晋升、升职加薪建议
 career_switch:职业转行
 general_chat:闲聊、情绪支持、通用问题
 输出必须是上面的这些字段，且只能是这些字段`
-	PlanPrompt = `# Role
+	PlanNodePrompt = `你是一个专业的职业规划师，请你根据用户的输入进行规划`
+	PlanPrompt     = `# Role
 你是一位拥有10年经验的资深职业规划师。
 
 # Context
